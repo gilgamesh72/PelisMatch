@@ -1,0 +1,415 @@
+{% extends "base.html" %}
+
+{% block title %}PelisMatch - Recomendaciones Inteligentes{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero">
+    <div class="hero-content">
+        <div class="container">
+            <h1 class="fade-in-up">🎬 PelisMatch</h1>
+            <p class="lead fade-in-up">Tu asistente inteligente para <strong>encontrar la película perfecta</strong></p>
+            <p class="text-tech fade-in-up">IA Avanzada • Recomendaciones Personalizadas • Búsqueda Inteligente</p>
+        </div>
+    </div>
+</div>
+
+<!-- Opciones de Búsqueda -->
+<div class="container my-5">
+    <div class="row g-4">
+        <!-- Búsqueda Simple -->
+        <div class="col-md-6">
+            <div class="feature-card text-center">
+                <div class="feature-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h4 class="text-gradient">Búsqueda Simple</h4>
+                <p>Encuentra películas similares usando nuestro algoritmo de grafos ponderados</p>
+                
+                <form id="form-busqueda-simple" class="mt-4">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="nombre-pelicula" 
+                               placeholder="Ej: Matrix, Avengers, Titanic..." required>
+                    </div>
+                    <button type="submit" class="btn btn-gradient">
+                        <i class="fas fa-project-diagram me-2"></i>Buscar Similares
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Recomendaciones por Favoritos -->
+        <div class="col-md-6">
+            <div class="feature-card text-center">
+                <div class="feature-icon">
+                    <i class="fas fa-heart"></i>
+                </div>
+                <h4 class="text-gradient">IA Neural</h4>
+                <p>Recomendaciones personalizadas usando redes neuronales y tus películas favoritas</p>
+                
+                <div class="mt-4">
+                    <p class="text-muted small">Primero agrega películas a favoritos</p>
+                    <button class="btn btn-outline-gradient" onclick="mostrarFavoritos()">
+                        <i class="fas fa-heart me-2"></i>Ver Favoritos 
+                        <span class="badge bg-pink ms-1" id="favoritos-count-main">0</span>
+                    </button>
+                </div>
+                
+                <div class="mt-3">
+                    <button class="btn btn-gradient" onclick="recomendarPorFavoritos()" 
+                            id="btn-ia-main" disabled>
+                        <i class="fas fa-brain me-2"></i>Generar con IA
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Funciones Avanzadas -->
+<div class="container my-5">
+    <h2 class="text-center mb-5">
+        <span class="text-gradient">🧠 Funciones Matemáticas Avanzadas</span>
+    </h2>
+    
+    <div class="row g-4">
+        <!-- Lógica Proposicional -->
+        <div class="col-md-4">
+            <div class="feature-card text-center">
+                <div class="feature-icon">
+                    <i class="fas fa-code-branch"></i>
+                </div>
+                <h5 class="text-gradient">Búsqueda Avanzada</h5>
+                <p class="small">Filtra por múltiples criterios para encontrar exactamente lo que buscas</p>
+                <button class="btn btn-outline-gradient btn-sm" onclick="abrirFiltrosAvanzados()">
+                    <i class="fas fa-filter me-1"></i>Abrir Filtros
+                </button>
+            </div>
+        </div>
+
+        <!-- Chatbot FSM -->
+        <div class="col-md-4">
+            <div class="feature-card text-center">
+                <div class="feature-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h5 class="text-gradient">Chatbot FSM</h5>
+                <p class="small">Conversación guiada con máquina de estados finitos</p>
+                <button class="btn btn-outline-gradient btn-sm" onclick="iniciarChatbot()">
+                    <i class="fas fa-comments me-1"></i>Iniciar Chat
+                </button>
+            </div>
+        </div>
+
+        <!-- Top N Ponderado -->
+        <div class="col-md-4">
+            <div class="feature-card text-center">
+                <div class="feature-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <h5 class="text-gradient">Top Ponderado</h5>
+                <p class="small">Mejores películas con función de media ponderada</p>
+                <a href="{{ url_for('top_movies') }}" class="btn btn-outline-gradient btn-sm">
+                    <i class="fas fa-chart-line me-1"></i>Ver Ranking
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sección de Resultados (oculta inicialmente) -->
+<div class="container my-5 d-none" id="seccion-resultados">
+    <div class="text-center mb-4">
+        <h3 class="text-gradient">Resultados de Recomendación</h3>
+        <p id="info-busqueda" class="text-muted"></p>
+    </div>
+    
+    <!-- Película Base -->
+    <div class="row mb-4" id="pelicula-base" style="display: none;">
+        <div class="col-12">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header bg-gradient text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bullseye me-2"></i>Nodo Central (Película Base)
+                    </h5>
+                </div>
+                <div class="card-body" id="info-pelicula-base">
+                    <!-- Contenido dinámico -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de Similares -->
+    <div class="row" id="lista-similares">
+        <!-- Contenido dinámico -->
+    </div>
+</div>
+
+<!-- Modal de Filtros Avanzados -->
+<div class="modal fade" id="filtrosModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-gradient">
+                    <i class="fas fa-filter me-2"></i>Búsqueda Avanzada
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Combina múltiples criterios para encontrar películas específicas. <strong>Incluye</strong> lo que quieres y <strong>excluye</strong> lo que no.
+                </div>
+                
+                <form id="form-filtros-avanzados">
+                    <div class="row">
+                        <!-- Incluir -->
+                        <div class="col-md-6">
+                            <h6 class="text-gradient">✅ Quiero que tenga</h6>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Géneros</label>
+                                <input type="text" class="form-control" id="incluir-generos" 
+                                       placeholder="Ej: 28 (Acción), 35 (Comedia), 18 (Drama)">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Actores</label>
+                                <input type="text" class="form-control" id="incluir-actores" 
+                                       placeholder="Busca por ID de actor (ej: 500, 1000)">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Directores</label>
+                                <input type="text" class="form-control" id="incluir-directores" 
+                                       placeholder="Busca por ID de director (ej: 138, 1893)">
+                            </div>
+                        </div>
+                        
+                        <!-- Excluir -->
+                        <div class="col-md-6">
+                            <h6 class="text-gradient">❌ No quiero que tenga</h6>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Géneros</label>
+                                <input type="text" class="form-control" id="excluir-generos" 
+                                       placeholder="Ej: 27,53 (Terror, Suspense)">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Actores</label>
+                                <input type="text" class="form-control" id="excluir-actores" 
+                                       placeholder="IDs de actores a excluir">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Directores</label>
+                                <input type="text" class="form-control" id="excluir-directores" 
+                                       placeholder="IDs de directores a excluir">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-gradient">
+                            <i class="fas fa-search me-2"></i>Buscar Películas
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+<script>
+// Inicialización de la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Actualizar contador de favoritos
+    actualizarContadorFavoritos();
+    
+    // Event listeners
+    document.getElementById('form-busqueda-simple').addEventListener('submit', buscarSimilares);
+    document.getElementById('form-filtros-avanzados').addEventListener('submit', aplicarFiltrosLogicos);
+    
+    // Animaciones
+    setTimeout(() => {
+        document.querySelectorAll('.fade-in-up').forEach((el, index) => {
+            setTimeout(() => {
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            }, index * 200);
+        });
+    }, 100);
+});
+
+// Función para búsqueda simple
+async function buscarSimilares(event) {
+    event.preventDefault();
+    
+    const nombrePelicula = document.getElementById('nombre-pelicula').value.trim();
+    if (!nombrePelicula) return;
+    
+    const btn = event.target.querySelector('button');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<div class="loading"></div> Buscando...';
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch(`/similares/${encodeURIComponent(nombrePelicula)}`);
+        const data = await response.json();
+        
+        if (response.ok) {
+            mostrarResultados(data, 'películas similares');
+        } else {
+            mostrarError(data.error || 'Error en la búsqueda');
+        }
+    } catch (error) {
+        mostrarError('Error de conexión');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+// Función para mostrar resultados
+function mostrarResultados(data, tipo) {
+    const seccion = document.getElementById('seccion-resultados');
+    const infoBusqueda = document.getElementById('info-busqueda');
+    const peliculaBase = document.getElementById('pelicula-base');
+    const infoPeliculaBase = document.getElementById('info-pelicula-base');
+    const listaSimilares = document.getElementById('lista-similares');
+    
+    // Mostrar información del tipo de búsqueda
+    infoBusqueda.textContent = `Resultados de ${tipo}`;
+    
+    // Mostrar película base si existe
+    if (data.pelicula_buscada) {
+        peliculaBase.style.display = 'block';
+        infoPeliculaBase.innerHTML = `
+            <div class="row">
+                <div class="col-md-3">
+                    <img src="${data.pelicula_buscada.poster_url}" class="img-fluid rounded movie-poster" alt="${data.pelicula_buscada.nombre}">
+                </div>
+                <div class="col-md-9">
+                    <h5 class="text-gradient">${data.pelicula_buscada.nombre}</h5>
+                    <p class="text-muted">${data.pelicula_buscada.overview || 'Descripción no disponible'}</p>
+                </div>
+            </div>
+        `;
+    } else {
+        peliculaBase.style.display = 'none';
+    }
+    
+    // Mostrar lista de similares/recomendaciones
+    let similares = data.similares || data.recomendaciones || data;
+    if (Array.isArray(similares)) {
+        listaSimilares.innerHTML = similares.map(pelicula => `
+            <div class="col-md-4 col-lg-3 mb-4">
+                <div class="movie-card">
+                    <img src="${pelicula.poster_url || pelicula.poster_url}" class="movie-poster" alt="${pelicula.nombre || pelicula.titulo}">
+                    <div class="movie-info">
+                        <h6 class="text-white mb-2">${pelicula.nombre || pelicula.titulo}</h6>
+                        ${pelicula.similitud ? `<span class="similarity-score">Similitud: ${pelicula.similitud.toFixed(2)}</span>` : ''}
+                        <div class="mt-2">
+                            <button class="btn btn-outline-light btn-sm" onclick="agregarAFavoritos(${pelicula.tmdb_id || Math.random()}, '${pelicula.nombre || pelicula.titulo}', '${pelicula.poster_url}')">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        listaSimilares.innerHTML = '<div class="col-12"><p class="text-center text-muted">No se encontraron resultados.</p></div>';
+    }
+    
+    // Mostrar sección y hacer scroll
+    seccion.classList.remove('d-none');
+    seccion.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Función para mostrar errores
+function mostrarError(mensaje) {
+    const seccion = document.getElementById('seccion-resultados');
+    const listaSimilares = document.getElementById('lista-similares');
+    
+    document.getElementById('info-busqueda').textContent = 'Error en la búsqueda';
+    document.getElementById('pelicula-base').style.display = 'none';
+    listaSimilares.innerHTML = `
+        <div class="col-12">
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>${mensaje}
+            </div>
+        </div>
+    `;
+    
+    seccion.classList.remove('d-none');
+    seccion.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Función para abrir filtros avanzados
+function abrirFiltrosAvanzados() {
+    const modal = new bootstrap.Modal(document.getElementById('filtrosModal'));
+    modal.show();
+}
+
+// Función para aplicar filtros lógicos
+async function aplicarFiltrosLogicos(event) {
+    event.preventDefault();
+    
+    const incluirGeneros = document.getElementById('incluir-generos').value.split(',').map(s => s.trim()).filter(s => s);
+    const incluirActores = document.getElementById('incluir-actores').value.split(',').map(s => s.trim()).filter(s => s);
+    const incluirDirectores = document.getElementById('incluir-directores').value.split(',').map(s => s.trim()).filter(s => s);
+    const excluirGeneros = document.getElementById('excluir-generos').value.split(',').map(s => s.trim()).filter(s => s);
+    const excluirActores = document.getElementById('excluir-actores').value.split(',').map(s => s.trim()).filter(s => s);
+    const excluirDirectores = document.getElementById('excluir-directores').value.split(',').map(s => s.trim()).filter(s => s);
+    
+    const filtros = {
+        incluir: {
+            generos: incluirGeneros,
+            actores: incluirActores,
+            directores: incluirDirectores
+        },
+        excluir: {
+            generos: excluirGeneros,
+            actores: excluirActores,
+            directores: excluirDirectores
+        }
+    };
+    
+    const btn = event.target.querySelector('button');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<div class="loading"></div> Procesando...';
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch('/buscar/logica', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(filtros)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Cerrar modal
+            bootstrap.Modal.getInstance(document.getElementById('filtrosModal')).hide();
+            mostrarResultados(data, 'búsqueda avanzada');
+        } else {
+            mostrarError(data.error || 'Error en los filtros');
+        }
+    } catch (error) {
+        mostrarError('Error de conexión');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+</script>
+{% endblock %}
