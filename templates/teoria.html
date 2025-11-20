@@ -1,0 +1,485 @@
+{% extends "base.html" %}
+
+{% block title %}Cómo Funciona - PelisMatch{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Hero Section -->
+    <div class="hero text-center py-5">
+        <h1 class="text-gradient">🧠 Cómo Funciona PelisMatch</h1>
+        <p class="lead">La <strong>inteligencia artificial</strong> detrás de nuestras recomendaciones</p>
+        <div class="text-tech">
+            <span class="badge bg-gradient me-2">Grafos</span>
+            <span class="badge bg-gradient me-2">Similitud del Coseno</span>
+            <span class="badge bg-gradient me-2">Lógica Proposicional</span>
+            <span class="badge bg-gradient me-2">Redes Neuronales</span>
+        </div>
+    </div>
+
+    <!-- Navegación interna -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <nav class="nav nav-pills nav-fill bg-dark rounded p-2">
+                <a class="nav-link active" data-bs-toggle="pill" href="#teoria-grafos">
+                    <i class="fas fa-project-diagram me-2"></i>Grafos & Similitud
+                </a>
+                <a class="nav-link" data-bs-toggle="pill" href="#teoria-logica">
+                    <i class="fas fa-code-branch me-2"></i>Lógica Proposicional
+                </a>
+                <a class="nav-link" data-bs-toggle="pill" href="#teoria-fsm">
+                    <i class="fas fa-robot me-2"></i>Máquina de Estados
+                </a>
+                <a class="nav-link" data-bs-toggle="pill" href="#teoria-ia">
+                    <i class="fas fa-brain me-2"></i>Redes Neuronales
+                </a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Contenido de las pestañas -->
+    <div class="tab-content">
+        <!-- Teoría de Grafos -->
+        <div class="tab-pane fade show active" id="teoria-grafos">
+            <div class="feature-card mb-4">
+                <h3 class="text-gradient">🔗 Teoría de Grafos y Similitud del Coseno</h3>
+                
+                <div class="row">
+                    <div class="col-lg-8">
+                        <h5>📍 Definición del Grafo</h5>
+                        <p>CineGraph modela las películas como un <strong>grafo ponderado no dirigido</strong>:</p>
+                        
+                        <div class="math-container bg-dark p-3 rounded mb-3">
+                            $$G = (V, E, W)$$
+                            <div class="text-muted small mt-2">
+                                Donde: V = nodos (películas), E = aristas (relaciones), W = pesos (similitud)
+                            </div>
+                        </div>
+
+                        <h5>⚡ Función de Similitud Ponderada</h5>
+                        <p>El peso de cada arista se calcula usando similitud del coseno modificada:</p>
+                        
+                        <div class="math-container bg-dark p-3 rounded mb-3">
+                            $$W(P_i, P_j) = W_d \cdot \delta_d + W_g \cdot |G_i \cap G_j| + W_a \cdot |A_i \cap A_j|$$
+                            <div class="text-muted small mt-2">
+                                <strong>Pesos:</strong> W_d = 3.0 (director), W_g = 2.0 (género), W_a = 1.5 (actores)
+                            </div>
+                        </div>
+
+                        <h5>🎯 Algoritmo de Recomendación</h5>
+                        <div class="bg-secondary p-3 rounded">
+                            <pre class="text-white mb-0"><code>function recomendar(película_objetivo):
+    vecinos = obtener_vecinos_directos(película_objetivo)
+    for each vecino in vecinos:
+        peso = calcular_similitud_ponderada(película_objetivo, vecino)
+        agregar_a_resultados(vecino, peso)
+    return ordenar_por_peso_descendente(resultados)</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <div class="bg-secondary p-3 rounded">
+                            <h6 class="text-gradient">🧮 Parámetros del Sistema</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>W_DIRECTOR:</strong> 3.0</li>
+                                <li><strong>W_GENERO:</strong> 2.0</li>
+                                <li><strong>W_ACTOR:</strong> 1.5</li>
+                            </ul>
+                            
+                            <h6 class="text-gradient mt-3">🔄 Complejidad</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Temporal:</strong> O(n×m)</li>
+                                <li><strong>Espacial:</strong> O(n)</li>
+                                <li><small>n = nodos, m = aristas promedio</small></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lógica Proposicional -->
+        <div class="tab-pane fade" id="teoria-logica">
+            <div class="feature-card mb-4">
+                <h3 class="text-gradient">⚡ Lógica Proposicional</h3>
+                
+                <div class="row">
+                    <div class="col-lg-8">
+                        <h5>🧠 Definición Formal</h5>
+                        <p>El sistema de filtros utiliza <strong>operadores lógicos</strong> para construir consultas complejas:</p>
+                        
+                        <div class="math-container bg-dark p-3 rounded mb-3">
+                            $$F = C_{incluir} \land \neg C_{excluir}$$
+                            <div class="text-muted small mt-2">
+                                F = conjunto final, C = criterios, ∧ = AND, ¬ = NOT
+                            </div>
+                        </div>
+
+                        <h5>🔧 Operadores Implementados</h5>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Operador</th>
+                                        <th>Símbolo</th>
+                                        <th>Implementación</th>
+                                        <th>Ejemplo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>AND</strong></td>
+                                        <td>∧</td>
+                                        <td>set.intersection()</td>
+                                        <td>Acción ∧ Sci-Fi</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>OR</strong></td>
+                                        <td>∨</td>
+                                        <td>set.union()</td>
+                                        <td>Comedia ∨ Drama</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>NOT</strong></td>
+                                        <td>¬</td>
+                                        <td>set.difference()</td>
+                                        <td>¬Terror</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h5>🎯 Algoritmo de Filtrado</h5>
+                        <div class="bg-secondary p-3 rounded">
+                            <pre class="text-white mb-0"><code>function filtrar_logica(criterios_incluir, criterios_excluir):
+    // Paso 1: Obtener conjuntos base
+    C_incluir = ∅
+    for each criterio in criterios_incluir:
+        C_incluir = C_incluir ∪ buscar_por_criterio(criterio)
+    
+    C_excluir = ∅  
+    for each criterio in criterios_excluir:
+        C_excluir = C_excluir ∪ buscar_por_criterio(criterio)
+    
+    // Paso 2: Aplicar lógica proposicional
+    F = C_incluir - C_excluir  // Diferencia de conjuntos
+    return F</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <div class="bg-secondary p-3 rounded mb-3">
+                            <h6 class="text-gradient">📋 Casos de Uso</h6>
+                            <ul class="small">
+                                <li><strong>Inclusión múltiple:</strong><br>
+                                    Acción ∧ Tom Cruise ∧ Sci-Fi</li>
+                                <li><strong>Exclusión selectiva:</strong><br>
+                                    Comedia ∧ ¬Adam Sandler</li>
+                                <li><strong>Filtro complejo:</strong><br>
+                                    (Drama ∨ Thriller) ∧ ¬Terror</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="alert alert-info small">
+                            <strong>Optimización:</strong> Las consultas se ejecutan en paralelo usando asyncio para reducir latencia.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Máquina de Estados Finitos -->
+        <div class="tab-pane fade" id="teoria-fsm">
+            <div class="feature-card mb-4">
+                <h3 class="text-gradient">🤖 Máquina de Estados Finitos (FSM)</h3>
+                
+                <div class="row">
+                    <div class="col-lg-8">
+                        <h5>🔄 Definición Formal</h5>
+                        <p>El chatbot implementa una <strong>FSM determinística</strong> para guiar la conversación:</p>
+                        
+                        <div class="math-container bg-dark p-3 rounded mb-3">
+                            $$M = (Q, \Sigma, \delta, q_0, F)$$
+                            <div class="text-muted small mt-2">
+                                Q = estados, Σ = alfabeto, δ = función transición, q₀ = estado inicial, F = estados finales
+                            </div>
+                        </div>
+
+                        <h5>🗺️ Estados del Chatbot</h5>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Estado</th>
+                                        <th>Función</th>
+                                        <th>Input Esperado</th>
+                                        <th>Transición</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><code>S0_INICIO</code></td>
+                                        <td>Saludo inicial</td>
+                                        <td>Cualquier mensaje</td>
+                                        <td>→ S1_GENERO</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>S1_GENERO</code></td>
+                                        <td>Captura género</td>
+                                        <td>Nombre de género</td>
+                                        <td>→ S2_DECADA</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>S2_DECADA</code></td>
+                                        <td>Captura época</td>
+                                        <td>"clásico" o "reciente"</td>
+                                        <td>→ S3_PERSONA</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>S3_PERSONA</code></td>
+                                        <td>Captura actor/director</td>
+                                        <td>Nombre o "ninguno"</td>
+                                        <td>→ FINAL</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h5>🎯 Función de Transición</h5>
+                        <div class="bg-secondary p-3 rounded">
+                            <pre class="text-white mb-0"><code>δ(estado_actual, input_usuario):
+    match estado_actual:
+        case 'S0_INICIO':
+            return 'S1_GENERO'
+        case 'S1_GENERO':
+            if validar_genero(input_usuario):
+                guardar_genero(input_usuario)
+                return 'S2_DECADA'
+            else:
+                return 'S1_GENERO'  // Permanecer en el mismo estado
+        case 'S2_DECADA':
+            if validar_epoca(input_usuario):
+                guardar_epoca(input_usuario)
+                return 'S3_PERSONA'
+            else:
+                return 'S2_DECADA'
+        case 'S3_PERSONA':
+            procesar_persona(input_usuario)
+            return 'FINAL'</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <div class="bg-secondary p-3 rounded mb-3">
+                            <h6 class="text-gradient">🔍 Lógica Difusa</h6>
+                            <p class="small">El sistema usa <strong>fuzzy matching</strong> para interpretar input del usuario:</p>
+                            <ul class="small">
+                                <li><strong>Similitud de cadenas:</strong> Levenshtein</li>
+                                <li><strong>Threshold:</strong> 70% de coincidencia</li>
+                                <li><strong>Algoritmo:</strong> token_set_ratio</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-dark p-3 rounded">
+                            <h6 class="text-gradient">⚙️ Características</h6>
+                            <ul class="small mb-0">
+                                <li>✅ Tolerante a errores ortográficos</li>
+                                <li>✅ Manejo de sinónimos</li>
+                                <li>✅ Reset en cualquier momento</li>
+                                <li>✅ Validación de cada entrada</li>
+                                <li>✅ Sesiones persistentes</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Redes Neuronales -->
+        <div class="tab-pane fade" id="teoria-ia">
+            <div class="feature-card mb-4">
+                <h3 class="text-gradient">🧠 Neural Collaborative Filtering</h3>
+                
+                <div class="row">
+                    <div class="col-lg-8">
+                        <h5>🏗️ Arquitectura de la Red</h5>
+                        <p>Implementamos <strong>Neural Collaborative Filtering</strong> para generar embeddings de películas:</p>
+                        
+                        <div class="math-container bg-dark p-3 rounded mb-3">
+                            $$\hat{r}_{ui} = f(E_u, E_i | \Theta)$$
+                            <div class="text-muted small mt-2">
+                                r̂ = rating predicho, E = embeddings, Θ = parámetros de la red
+                            </div>
+                        </div>
+
+                        <h5>🔧 Capas de la Red</h5>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Capa</th>
+                                        <th>Tipo</th>
+                                        <th>Dimensiones</th>
+                                        <th>Función</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Input</td>
+                                        <td>Input Layer</td>
+                                        <td>[1] × 2</td>
+                                        <td>user_id, movie_id</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Embedding</td>
+                                        <td>Embedding Layer</td>
+                                        <td>[50] × 2</td>
+                                        <td>Vectores latentes</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Concat</td>
+                                        <td>Concatenate</td>
+                                        <td>[100]</td>
+                                        <td>Unir embeddings</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Dense1</td>
+                                        <td>Dense + ReLU</td>
+                                        <td>[128]</td>
+                                        <td>Extracción de features</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Dense2</td>
+                                        <td>Dense + ReLU</td>
+                                        <td>[64]</td>
+                                        <td>Refinamiento</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Output</td>
+                                        <td>Dense</td>
+                                        <td>[1]</td>
+                                        <td>Predicción rating</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h5>🎯 Algoritmo de Recomendación</h5>
+                        <div class="bg-secondary p-3 rounded">
+                            <pre class="text-white mb-0"><code>function recomendar_con_ia(favoritos_usuario):
+    // Paso 1: Obtener embeddings de favoritos
+    embeddings_favoritos = []
+    for pelicula in favoritos_usuario:
+        embedding = model.get_movie_embedding(pelicula.id)
+        embeddings_favoritos.append(embedding)
+    
+    // Paso 2: Crear perfil de usuario (promedio)
+    perfil_usuario = mean(embeddings_favoritos)
+    
+    // Paso 3: Calcular similitud coseno
+    similitudes = cosine_similarity(perfil_usuario, todos_embeddings)
+    
+    // Paso 4: Devolver top N excluyendo favoritos
+    return top_n_excluding_favorites(similitudes, favoritos_usuario)</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <div class="bg-secondary p-3 rounded mb-3">
+                            <h6 class="text-gradient">📊 Métricas del Modelo</h6>
+                            <ul class="small">
+                                <li><strong>Loss Function:</strong> MSE</li>
+                                <li><strong>Optimizer:</strong> Adam</li>
+                                <li><strong>Epochs:</strong> 20</li>
+                                <li><strong>Batch Size:</strong> 64</li>
+                                <li><strong>Embedding Dim:</strong> 50</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-dark p-3 rounded mb-3">
+                            <h6 class="text-gradient">🎯 Ventajas del Enfoque</h6>
+                            <ul class="small">
+                                <li>✅ <strong>Escalable:</strong> O(k) donde k = dimensión embedding</li>
+                                <li>✅ <strong>Personalizado:</strong> Perfil único por usuario</li>
+                                <li>✅ <strong>Aprende patrones:</strong> Relaciones no lineales</li>
+                                <li>✅ <strong>Cold start:</strong> Funciona con pocos favoritos</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="alert alert-warning small">
+                            <strong>Nota:</strong> Los embeddings se pre-calculan durante el entrenamiento para optimizar la velocidad de respuesta.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección de créditos -->
+    <div class="feature-card mt-5 text-center">
+        <h4 class="text-gradient">👩‍💻 Desarrollado por Diana & Katherine</h4>
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="bg-secondary p-3 rounded">
+                    <h6 class="text-gradient">🧠 Diana - Backend & Algoritmos</h6>
+                    <ul class="list-unstyled small">
+                        <li>✅ Implementación de grafos ponderados</li>
+                        <li>✅ Función de similitud del coseno</li>
+                        <li>✅ Motor de lógica proposicional</li>
+                        <li>✅ FSM del chatbot con fuzzy matching</li>
+                        <li>✅ Red neuronal NCF</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="bg-secondary p-3 rounded">
+                    <h6 class="text-gradient">💻 Katherine - Frontend & UX</h6>
+                    <ul class="list-unstyled small">
+                        <li>✅ Diseño de interfaz responsiva</li>
+                        <li>✅ Sistema de favoritos con localStorage</li>
+                        <li>✅ Widget conversacional del chatbot</li>
+                        <li>✅ Conexión con APIs backend</li>
+                        <li>✅ Documentación matemática</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <p class="text-muted mt-3">
+            <strong>Proyecto Final - Matemáticas Discretas</strong><br>
+            Universidad • 2025
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Renderizar todas las ecuaciones matemáticas
+    document.querySelectorAll('.math-container').forEach(function(element) {
+        const mathText = element.textContent.trim();
+        if (mathText.startsWith('$$') && mathText.endsWith('$$')) {
+            const equation = mathText.slice(2, -2);
+            try {
+                katex.render(equation, element, {
+                    displayMode: true,
+                    throwOnError: false,
+                    colorIsTextColor: true,
+                    macros: {
+                        "\\land": "\\wedge",
+                        "\\lor": "\\vee",
+                        "\\neg": "\\lnot"
+                    }
+                });
+            } catch (e) {
+                console.error('Error rendering math:', e);
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

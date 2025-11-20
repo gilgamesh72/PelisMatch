@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}Top Movies - PelisMatch{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="hero text-center py-5">
+        <h1 class="text-gradient">🏆 Top Movies Ponderado</h1>
+        <p class="lead">Mejores películas calculadas con <strong>Función de Media Ponderada</strong></p>
+        <div class="text-tech">
+            <p>Fórmula: W = (v ÷ (v+m)) × R + (m ÷ (v+m)) × C</p>
+            <small>Donde: v = votos, m = mínimo votos, R = rating, C = promedio global</small>
+        </div>
+    </div>
+
+    <!-- Controles y filtros -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Este ranking utiliza la <strong>función de media ponderada</strong> para balancear 
+                la popularidad (número de votos) con la calidad (rating promedio).
+                Las películas con más votos tienen mayor peso en el cálculo.
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-outline-gradient" onclick="cargarTopPeliculas()">
+                <i class="fas fa-sync-alt me-2"></i>Actualizar Ranking
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-top" class="text-center py-5" style="display: none;">
+        <div class="loading mx-auto mb-3"></div>
+        <p class="text-muted">Calculando rankings ponderados...</p>
+    </div>
+
+    <!-- Lista de películas -->
+    <div class="row" id="lista-top-peliculas">
+        <!-- Contenido dinámico -->
+    </div>
+
+    <!-- Explicación matemática -->
+    <div class="mt-5">
+        <div class="feature-card">
+            <h4 class="text-gradient mb-3">
+                <i class="fas fa-calculator me-2"></i>Explicación Matemática
+            </h4>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>🔢 Fórmula de Ponderación</h6>
+                    <div class="bg-dark p-3 rounded mb-3" style="font-family: 'JetBrains Mono';">
+                        W = (v ÷ (v+m)) × R + (m ÷ (v+m)) × C
+                    </div>
+                    
+                    <ul class="list-unstyled">
+                        <li><strong>W:</strong> Puntuación ponderada final</li>
+                        <li><strong>v:</strong> Número de votos de la película</li>
+                        <li><strong>m:</strong> Mínimo de votos requeridos (1000)</li>
+                        <li><strong>R:</strong> Rating promedio de la película</li>
+                        <li><strong>C:</strong> Rating promedio global (7.0)</li>
+                    </ul>
+                </div>
+                
+                <div class="col-md-6">
+                    <h6>📊 ¿Por qué esta fórmula?</h6>
+                    <ul>
+                        <li>✅ <strong>Previene inflación:</strong> Una película con 5 votos excelentes no supera a una con 10,000 votos buenos</li>
+                        <li>✅ <strong>Recompensa consistencia:</strong> Más votos = más confiabilidad</li>
+                        <li>✅ <strong>Equilibra calidad:</strong> No ignora películas con pocos votos pero excelente rating</li>
+                        <li>✅ <strong>Matemáticamente sólida:</strong> Basada en el algoritmo de IMDb</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Cargar top películas al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    cargarTopPeliculas();
+});
+
+// Función para cargar las mejores películas
+async function cargarTopPeliculas() {
+    const loading = document.getElementById('loading-top');
+    const lista = document.getElementById('lista-top-peliculas');
+    
+    loading.style.display = 'block';
+    lista.innerHTML = '';
+    
+    try {
+        const response = await fetch('/api/top-peliculas');
+        const data = await response.json();
+        
+        if (response.ok && data.peliculas) {
+            mostrarTopPeliculas(data.peliculas);
+        } else {
+            lista.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error al cargar el ranking: ${data.error || 'Error desconocido'}
+                    </div>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        lista.innerHTML = `
+            <div class="col-12">
+                <div class="alert alert-danger">
+                    <i class="fas fa-wifi me-2"></i>Error de conexión. Verifica tu internet.
+                </div>
+            </div>
+        `;
+    } finally {
+        loading.style.display = 'none';
+    }
+}
+
+// Función para mostrar las películas en el ranking
+function mostrarTopPeliculas(peliculas) {
+    const lista = document.getElementById('lista-top-peliculas');
+    
+    lista.innerHTML = peliculas.map((pelicula, index) => `
+        <div class="col-12 mb-3">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <!-- Posición -->
+                        <div class="col-auto">
+                            <div class="rank-badge ${getRankClass(index)}">
+                                ${index + 1}
+                            </div>
+                        </div>
+                        
+                        <!-- Poster -->
+                        <div class="col-auto">
+                            <img src="${pelicula.poster_url}" class="rounded" 
+                                 style="width: 80px; height: 120px; object-fit: cover;" 
+                                 alt="${pelicula.titulo}">
+                        </div>
+                        
+                        <!-- Información -->
+                        <div class="col">
+                            <h5 class="text-white mb-2">${pelicula.titulo}</h5>
+                            <p class="text-muted small mb-2">${pelicula.overview.substring(0, 150)}...</p>
+                            
+                            <!-- Métricas -->
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="badge bg-gradient">
+                                    <i class="fas fa-star me-1"></i>Ponderado: ${pelicula.puntuacion_ponderada}
+                                </span>
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-thumbs-up me-1"></i>Rating: ${pelicula.rating_original}/10
+                                </span>
+                                <span class="badge bg-info">
+                                    <i class="fas fa-users me-1"></i>Votos: ${pelicula.votos.toLocaleString()}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Acciones -->
+                        <div class="col-auto">
+                            <div class="d-flex flex-column gap-2">
+                                <button class="btn btn-outline-light btn-sm" 
+                                        onclick="agregarAFavoritos(${pelicula.tmdb_id}, '${pelicula.titulo}', '${pelicula.poster_url}')"
+                                        title="Agregar a favoritos">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                                <button class="btn btn-outline-gradient btn-sm" 
+                                        onclick="buscarSimilaresDesdeTop('${pelicula.titulo}')"
+                                        title="Buscar similares">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Función para obtener clase CSS del ranking
+function getRankClass(index) {
+    if (index === 0) return 'rank-gold';
+    if (index === 1) return 'rank-silver';
+    if (index === 2) return 'rank-bronze';
+    return 'rank-normal';
+}
+
+// Función para buscar similares desde el top
+function buscarSimilaresDesdeTop(titulo) {
+    // Redirigir a la página principal con el título
+    window.location.href = `/?search=${encodeURIComponent(titulo)}`;
+}
+
+// CSS adicional para los badges de ranking
+const rankingStyles = `
+<style>
+.rank-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.rank-gold {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #000;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+}
+
+.rank-silver {
+    background: linear-gradient(135deg, #C0C0C0, #A8A8A8);
+    color: #000;
+    box-shadow: 0 4px 15px rgba(192, 192, 192, 0.4);
+}
+
+.rank-bronze {
+    background: linear-gradient(135deg, #CD7F32, #B87333);
+    color: white;
+    box-shadow: 0 4px 15px rgba(205, 127, 50, 0.4);
+}
+
+.rank-normal {
+    background: var(--gradient-primary);
+    color: white;
+}
+</style>
+`;
+
+document.head.insertAdjacentHTML('beforeend', rankingStyles);
+</script>
+{% endblock %}
