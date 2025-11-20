@@ -1,0 +1,461 @@
+/* ================================================
+   CINEGRAPH - ESTILO DE PROGRAMADORAS EMPODERADAS
+   Por Diana & Katherine 
+   ================================================ */
+
+:root {
+    /* Paleta de colores empoderada */
+    --primary-purple: #6c5ce7;
+    --secondary-pink: #fd79a8;
+    --accent-blue: #74b9ff;
+    --dark-bg: #2d3436;
+    --darker-bg: #1e2124;
+    --light-text: #ffffff;
+    --muted-text: #b2bec3;
+    --success: #00b894;
+    --warning: #fdcb6e;
+    --danger: #e84393;
+    
+    /* Gradientes tech */
+    --gradient-primary: linear-gradient(135deg, var(--primary-purple), var(--secondary-pink));
+    --gradient-secondary: linear-gradient(135deg, var(--accent-blue), var(--primary-purple));
+    --gradient-dark: linear-gradient(135deg, var(--dark-bg), var(--darker-bg));
+    
+    /* Fuentes */
+    --font-code: 'JetBrains Mono', monospace;
+    --font-main: 'Poppins', sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--gradient-dark);
+    color: var(--light-text);
+    font-family: var(--font-main);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* ================== NAVBAR ================== */
+.navbar {
+    background: rgba(45, 52, 54, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 2px solid var(--primary-purple);
+    transition: all 0.3s ease;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+.brand-icon {
+    color: var(--secondary-pink);
+    font-size: 1.8rem;
+    animation: pulse 2s infinite;
+}
+
+.brand-text .cine {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.brand-text .graph {
+    color: var(--accent-blue);
+}
+
+.dev-tag {
+    background: var(--gradient-primary);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-family: var(--font-code);
+}
+
+.nav-link {
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    margin: 0 2px;
+}
+
+.nav-link:hover {
+    background: rgba(108, 92, 231, 0.2);
+    color: var(--secondary-pink) !important;
+    transform: translateY(-1px);
+}
+
+/* ================== MAIN LAYOUT ================== */
+.main-content {
+    padding-top: 80px;
+    min-height: calc(100vh - 160px);
+}
+
+.container {
+    max-width: 1200px;
+}
+
+/* ================== HERO SECTION ================== */
+.hero {
+    background: var(--gradient-primary);
+    padding: 4rem 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+    opacity: 0.3;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.hero h1 {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.hero p {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+}
+
+/* ================== CARDS Y COMPONENTES ================== */
+.feature-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 2rem;
+    height: 100%;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--primary-purple);
+    box-shadow: 0 10px 30px rgba(108, 92, 231, 0.3);
+}
+
+.feature-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.movie-card {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.movie-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    border-color: var(--secondary-pink);
+}
+
+.movie-poster {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+}
+
+.movie-info {
+    padding: 1rem;
+}
+
+.similarity-score {
+    background: var(--gradient-primary);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-family: var(--font-code);
+    font-weight: 600;
+}
+
+/* ================== BOTONES ================== */
+.btn-gradient {
+    background: var(--gradient-primary);
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4);
+    color: white;
+}
+
+.btn-gradient:active {
+    transform: translateY(0);
+}
+
+.btn-outline-gradient {
+    background: transparent;
+    border: 2px solid var(--primary-purple);
+    color: var(--primary-purple);
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-gradient:hover {
+    background: var(--gradient-primary);
+    border-color: transparent;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* ================== FORMS ================== */
+.form-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    color: white;
+    padding: 12px 16px;
+    font-size: 1rem;
+}
+
+.form-control:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--primary-purple);
+    color: white;
+    box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.25);
+}
+
+.form-control::placeholder {
+    color: var(--muted-text);
+}
+
+.form-label {
+    color: var(--light-text);
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+/* ================== CHATBOT ================== */
+.chatbot-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.chatbot-toggle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--gradient-primary);
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(108, 92, 231, 0.4);
+}
+
+.chatbot-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(108, 92, 231, 0.6);
+}
+
+.chatbot-panel {
+    position: absolute;
+    bottom: 80px;
+    right: 0;
+    width: 320px;
+    height: 400px;
+    background: var(--dark-bg);
+    border: 1px solid var(--primary-purple);
+    border-radius: 16px;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.chatbot-header {
+    background: var(--gradient-primary);
+    padding: 1rem;
+    color: white;
+    font-weight: 600;
+}
+
+.chatbot-messages {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+.chatbot-input {
+    padding: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.message {
+    margin-bottom: 1rem;
+    padding: 8px 12px;
+    border-radius: 12px;
+    max-width: 80%;
+}
+
+.message.bot {
+    background: rgba(108, 92, 231, 0.2);
+    align-self: flex-start;
+}
+
+.message.user {
+    background: var(--gradient-primary);
+    align-self: flex-end;
+    margin-left: auto;
+}
+
+/* ================== UTILITIES ================== */
+.text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 600;
+}
+
+.bg-pink {
+    background-color: var(--secondary-pink) !important;
+}
+
+.text-tech {
+    font-family: var(--font-code);
+    font-size: 0.9rem;
+    color: var(--accent-blue);
+}
+
+/* ================== ANIMATIONS ================== */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* ================== FOOTER ================== */
+.footer {
+    background: var(--darker-bg);
+    padding: 3rem 0 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 4rem;
+}
+
+/* ================== RESPONSIVE ================== */
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 2.5rem;
+    }
+    
+    .hero p {
+        font-size: 1rem;
+    }
+    
+    .chatbot-panel {
+        width: calc(100vw - 40px);
+        right: -10px;
+    }
+    
+    .feature-card {
+        margin-bottom: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .main-content {
+        padding-top: 70px;
+    }
+    
+    .hero {
+        padding: 2rem 0;
+    }
+    
+    .hero h1 {
+        font-size: 2rem;
+    }
+}
+
+/* ================== LOADING STATES ================== */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: var(--secondary-pink);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ================== CUSTOM SCROLLBAR ================== */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--dark-bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-purple);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary-pink);
+}
