@@ -1,8 +1,3 @@
-// ================================================
-// SISTEMA DE FAVORITOS - CINEGRAPH
-// Por Katherine & Diana
-// ================================================
-
 // Variables globales
 let favoritos = JSON.parse(localStorage.getItem('cinegraph_favoritos') || '[]');
 
@@ -37,8 +32,11 @@ function actualizarContadorFavoritos() {
 
 // Función para agregar película a favoritos
 function agregarAFavoritos(tmdbId, titulo, posterUrl) {
+    // Convertir a número para asegurar formato correcto
+    const numericId = parseInt(tmdbId) || Math.floor(Math.random() * 1000000);
+    
     // Verificar si ya está en favoritos
-    const yaExiste = favoritos.find(fav => fav.tmdb_id === tmdbId);
+    const yaExiste = favoritos.find(fav => fav.tmdb_id === numericId);
     
     if (yaExiste) {
         mostrarNotificacion('⚠️ Esta película ya está en tus favoritos', 'warning');
@@ -46,7 +44,7 @@ function agregarAFavoritos(tmdbId, titulo, posterUrl) {
     }
     
     const nuevoFavorito = {
-        tmdb_id: tmdbId,
+        tmdb_id: numericId,
         titulo: titulo,
         poster_url: posterUrl,
         fecha_agregado: new Date().toISOString()
@@ -118,7 +116,14 @@ async function recomendarPorFavoritos() {
         return;
     }
     
-    const tmdbIds = favoritos.map(fav => fav.tmdb_id);
+    // Asegurar que todos los IDs sean números
+    const tmdbIds = favoritos.map(fav => parseInt(fav.tmdb_id)).filter(id => !isNaN(id));
+    
+    if (tmdbIds.length === 0) {
+        mostrarNotificacion('⚠️ No hay IDs válidos en favoritos', 'warning');
+        return;
+    }
+    
     const btn = document.querySelector('#btn-recomendar-favoritos') || document.querySelector('#btn-ia-main');
     
     if (btn) {
@@ -127,17 +132,26 @@ async function recomendarPorFavoritos() {
         btn.disabled = true;
         
         try {
+            console.log('Enviando IDs a IA:', tmdbIds); // Debug
+            
+            const requestBody = {
+                favoritos_tmdb_ids: tmdbIds
+            };
+            
+            console.log('Request body:', requestBody); // Debug
+            
             const response = await fetch('/recomendaciones/favoritos', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    favoritos_tmdb_ids: tmdbIds
-                })
+                body: JSON.stringify(requestBody)
             });
             
+            console.log('Response status:', response.status); // Debug
+            
             const data = await response.json();
+            console.log('Response data:', data); // Debug
             
             if (response.ok) {
                 // Cerrar modal de favoritos si está abierto
@@ -154,7 +168,7 @@ async function recomendarPorFavoritos() {
                     mostrarNotificacion('✨ Recomendaciones generadas con IA', 'success');
                 }
             } else {
-                mostrarNotificacion(`❌ Error: ${data.error}`, 'danger');
+                mostrarNotificacion(`❌ Error: ${data.error || 'Error desconocido'}`, 'danger');
             }
         } catch (error) {
             console.error('Error en recomendaciones IA:', error);

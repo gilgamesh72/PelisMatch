@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, session, render_template, redirect, url_for
+from flask import Flask, jsonify, request, session, render_template
 from rapidfuzz import fuzz, process
 import requests
 import asyncio
@@ -7,7 +7,8 @@ import numpy as np
 import json
 from sklearn.metrics.pairwise import cosine_similarity
 app = Flask(__name__)
-app.secret_key = 'cinegraph_2025_diana_katherine'  # Para sesiones del chatbot
+# Clave para manejar 'session' en endpoints como /chatbot
+app.secret_key = "pelismatch_secret_key"  # Ajusta a algo seguro en producción
 
 # --- 1. CONFIGURACIÓN DE TMDb ---
 API_KEY = "310313c5dfcadae4d9bb178828d491a0" 
@@ -62,110 +63,66 @@ def calcular_similitud_optimizado(pelicula_a, pelicula_b):
 
     return peso
 
-def calcular_similitud(pelicula_a, pelicula_b):
-    """
-    Calcula el peso de la arista (similitud) entre dos películas.
-    Ambos 'pelicula_a' y 'pelicula_b' son objetos JSON de TMDb.
-    """
-    peso = 0.0
 
-    # 1. Comparar Director
-    # (Se usa función auxiliar para obtener el director)
-    director_a = obtener_director(pelicula_a['id'])
-    director_b = obtener_director(pelicula_b['id'])
-    
-    if director_a and director_b and director_a == director_b:
-        peso += W_DIRECTOR
+def buscar_pelicula_por_nombre(nombre, min_score: int = 60):
+    """Busca una película por nombre usando coincidencia exacta o aproximada.
 
-    # 2. Comparar Géneros (TMDb da una lista de géneros)
-    generos_a = {g['id'] for g in pelicula_a['genres']}
-    generos_b = {g['id'] for g in pelicula_b['genres']}
-    
-    # Usamos intersección de conjuntos para encontrar el numero de generos iguales
-    generos_comunes = generos_a.intersection(generos_b)
-    peso += len(generos_comunes) * W_GENERO
+    1. Realiza búsqueda en TMDb (/search/movie) con el texto ingresado.
+    2. Si hay resultados, aplica fuzzy matching (rapidfuzz) sobre los títulos
+       para elegir la mejor coincidencia (token_set_ratio) por encima de
+       'min_score'. Si no supera el umbral pero hay resultados, toma el primero.
+    3. Devuelve el JSON de detalles completos (/movie/{id}).
 
-    # 3. Comparar Actores Principales
-    actores_a = obtener_actores_principales(pelicula_a['id'])
-    actores_b = obtener_actores_principales(pelicula_b['id'])
-    
-    # Usamos intersección para contar actores comunes
-    actores_comunes = actores_a.intersection(actores_b)
-    peso += len(actores_comunes) * W_ACTOR
+    Args:
+        nombre (str): Texto ingresado por el usuario.
+        min_score (int): Umbral mínimo de similitud (0-100) para aceptar
+            la coincidencia difusa. Por defecto 60.
 
-    return peso
-
-def obtener_director(pelicula_id):
-    """
-    Función para obtener el director de una película desde TMDb.
-    """
-    try:
-        # Llama al endpoint de "credits"
-        url = f"{BASE_URL}/movie/{pelicula_id}/credits"
-        params = {'api_key': API_KEY}
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        creditos = response.json()
-        
-        # Busca en el "crew" a la persona cuyo "job" es "Director"
-        for persona in creditos.get('crew', []):
-            if persona['job'] == 'Director':
-                return persona['name']
-    except requests.RequestException:
-        return None
-    return None
-
-def obtener_actores_principales(pelicula_id, num_actores=3):
-    """
-    Función para obtener los nombres de los N actores principales de una película.
-    Por defecto, devuelve los 3 actores con mayor 'order'.
-    """
-    try:
-        # Llama al endpoint de "credits"
-        url = f"{BASE_URL}/movie/{pelicula_id}/credits"
-        params = {'api_key': API_KEY}
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        creditos = response.json()
-        
-        # Filtra los primeros N actores del 'cast' (que ya vienen ordenados por popularidad/importancia)
-        actores = [
-            actor['name'] 
-            for actor in creditos.get('cast', [])
-        ]
-        
-        return set(actores[:num_actores])
-    except requests.RequestException:
-        return set()
-    return set()
-
-def buscar_pelicula_por_nombre(nombre):
-    """
-    Encuentra la película principal (nodo central) por su nombre.
+    Returns:
+        dict | None: JSON de detalles de la película o None si no se encuentra.
     """
     try:
         url = f"{BASE_URL}/search/movie"
         params = {'api_key': API_KEY, 'query': nombre, 'language': 'es-ES'}
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
         resultados = response.json().get('results', [])
-        
+
         if not resultados:
             return None
-        
-        # Devuelve el ID de la primera película encontrada
-        primera_pelicula_id = resultados[0]['id']
-        
-        # Ahora obtenemos los detalles completos de esa película
-        url_detalles = f"{BASE_URL}/movie/{primera_pelicula_id}"
+
+        # Preparar lista de títulos para fuzzy
+        titulos = [r.get('title', '') for r in resultados]
+        mejor = None
+        try:
+            # process.extractOne devuelve (choice, score, index)
+            mejor = process.extractOne(
+                nombre,
+                titulos,
+                scorer=fuzz.token_set_ratio,
+                score_cutoff=min_score
+            )
+        except Exception as fe:
+            print(f"Fuzzy error: {fe}")
+
+        if mejor:
+            _, score, idx = mejor
+            elegido = resultados[idx]
+            print(f"Fuzzy match '{nombre}' -> '{elegido.get('title')}' (score={score})")
+        else:
+            # Fallback al primer resultado de TMDb
+            elegido = resultados[0]
+            print(f"Fuzzy sin coincidencia >= {min_score}. Usando primer resultado: '{elegido.get('title')}'")
+
+        pelicula_id = elegido['id']
+        url_detalles = f"{BASE_URL}/movie/{pelicula_id}"
         params_detalles = {'api_key': API_KEY, 'language': 'es-ES'}
-        response_detalles = requests.get(url_detalles, params=params_detalles)
+        response_detalles = requests.get(url_detalles, params=params_detalles, timeout=10)
         response_detalles.raise_for_status()
-        
         return response_detalles.json()
-        
+
     except requests.RequestException as e:
-        print(f"Error en API: {e}")
+        print(f"Error en API búsqueda fuzzy: {e}")
         return None
 
 # --- 3. ENDPOINT DE LA API (Flask) ---
@@ -234,7 +191,8 @@ async def get_similares(nombre_pelicula): # <--- CONVERTIDO A ASYNC
         "pelicula_buscada": {
             "nombre": pelicula_principal['title'],
             "poster_url": f"{IMAGE_BASE_URL}{pelicula_principal.get('poster_path', '')}",
-            "overview": pelicula_principal['overview']
+            "overview": pelicula_principal['overview'],
+            "tmdb_id": pelicula_principal.get('id')
         },
         "similares": vecinos_ordenados
     })
@@ -341,7 +299,7 @@ async def busqueda_logica(): # CAMBIO: El endpoint ahora es 'async def'
     return jsonify(resultados_finales)
 
 
-#========================================= CHAT BOT ======================================================00000
+#========================================= CHAT BOT ======================================================
 GENEROS_MAP = {
     "accion": 28,
     "aventura": 12,
@@ -464,6 +422,66 @@ async def recomendar_con_chatbot(client, collected_data):
         print(f"Error inesperado en API: {e}")
         return ["Hubo un problema con la API."]
 
+"""=== Fuzzy y búsqueda asistida de personas (actores/directores) para chatbot ==="""
+
+# Índices normalizados para coincidencia rápida local (usamos catálogos fijos ya definidos abajo)
+def _build_person_indices():
+    try:
+        actores_index = {normalizar_texto(a['nombre']): a for a in actores_tmdb}
+        directores_index = {normalizar_texto(d['nombre']): d for d in directores_tmdb}
+        return actores_index, directores_index
+    except Exception:
+        return {}, {}
+
+ACTORES_INDEX, DIRECTORES_INDEX = _build_person_indices()
+
+def fuzzy_persona_local(query, max_candidates=6, cutoff=70):
+    """Devuelve lista de candidatos locales (actores/directores) con score >= cutoff.
+    Cada candidato: {tipo, nombre, id, score}
+    """
+    q = normalizar_texto(query)
+    choices = list(ACTORES_INDEX.keys()) + list(DIRECTORES_INDEX.keys())
+    if not choices:
+        return []
+    resultados = process.extract(
+        q,
+        choices,
+        scorer=fuzz.token_set_ratio,
+        score_cutoff=cutoff,
+        limit=max_candidates
+    )
+    candidatos = []
+    for choice, score, _ in resultados:
+        if choice in ACTORES_INDEX:
+            item = ACTORES_INDEX[choice]; tipo = 'actor'
+        else:
+            item = DIRECTORES_INDEX[choice]; tipo = 'director'
+        candidatos.append({
+            'tipo': tipo,
+            'nombre': item['nombre'],
+            'id': item['id'],
+            'score': score
+        })
+    return candidatos
+
+async def buscar_persona_remoto(client, nombre, limit=5):
+    """Consulta TMDb /search/person y retorna candidatos con score fuzzy local al nombre."""
+    url = f"{BASE_URL}/search/person"
+    params = {'api_key': API_KEY, 'query': nombre, 'language': 'es-ES'}
+    try:
+        r = await client.get(url, params=params)
+        r.raise_for_status()
+        results = r.json().get('results', [])[:limit]
+        out = []
+        for p in results:
+            nombre_p = p.get('name', '')
+            score = fuzz.token_set_ratio(normalizar_texto(nombre), normalizar_texto(nombre_p))
+            out.append({'nombre': nombre_p, 'id': p.get('id'), 'score': score})
+        return sorted(out, key=lambda x: x['score'], reverse=True)
+    except httpx.RequestError as e:
+        print(f"Error remoto persona: {e}")
+        return []
+
 # --- ENDPOINT DEL CHATBOT (FSM) ---
 
 @app.route("/chatbot", methods=['POST'])
@@ -522,12 +540,9 @@ async def handle_chatbot():
         session['state'] = 'S3_PERSONA'
         return jsonify({"respuesta": f"Entendido, algo '{matched_key}'. ¿Tienes algún actor o director en mente? (Escribe un nombre o 'ninguno')"})
 
-    # ESTADO S3: ESPERANDO PERSONA (CON LÓGICA DIFUSA PARA 'NINGUNO')
+    # ESTADO S3: ESPERANDO PERSONA (actor/director) CON CONFIRMACIÓN
     elif current_state == 'S3_PERSONA':
-        
         async with httpx.AsyncClient() as client:
-            
-            # *** INICIO DE LA MODIFICACIÓN FUZZY ***
             normalized_query = normalizar_texto(user_message)
             ninguno_match = process.extractOne(
                 normalized_query,
@@ -535,34 +550,95 @@ async def handle_chatbot():
                 scorer=fuzz.token_set_ratio,
                 score_cutoff=80
             )
-            
             if ninguno_match:
-                print(f"Coincidencia difusa para 'ninguno': {ninguno_match[0]}")
-                # El usuario dijo 'ninguno', no hacemos nada con 'persona_id'
-            # *** FIN DE LA MODIFICACIÓN FUZZY ***
-            else:
-                # Si no es 'ninguno', buscamos a la persona
-                persona_id = await buscar_id_persona(client, user_message)
-                if persona_id:
-                    collected_data['persona_id'] = persona_id
-                else:
-                    return jsonify({"respuesta": f"No encontré a '{user_message}'. ¿Quieres intentar con otro nombre o decir 'ninguno'?"})
+                # Sin persona, pasar a recomendación directa
+                recomendaciones = await recomendar_con_chatbot(client, collected_data)
+                session.clear()
+                return jsonify({
+                    "respuesta": "¡Aquí tienes tus recomendaciones! " + ", ".join(recomendaciones),
+                    "recomendaciones": recomendaciones
+                })
 
-            # ¡ESTADO FINAL!
+            # 1. Intento local (catálogo fijo)
+            candidatos_local = fuzzy_persona_local(user_message)
+            if len(candidatos_local) == 1:
+                collected_data['persona_id'] = candidatos_local[0]['id']
+                recomendaciones = await recomendar_con_chatbot(client, collected_data)
+                session.clear()
+                return jsonify({
+                    "respuesta": "¡Aquí tienes tus recomendaciones! " + ", ".join(recomendaciones),
+                    "recomendaciones": recomendaciones,
+                    "seleccion_persona": candidatos_local[0]
+                })
+            elif len(candidatos_local) > 1:
+                # Pedir confirmación
+                session['state'] = 'S3_CONFIRMAR_PERSONA'
+                session['data'] = collected_data
+                session['candidatos'] = candidatos_local
+                return jsonify({
+                    "respuesta": "Selecciona uno de los siguientes (envía el ID):",
+                    "opciones_persona": candidatos_local
+                })
+
+            # 2. Remoto si no hubo candidatos locales
+            candidatos_remotos = await buscar_persona_remoto(client, user_message)
+            if not candidatos_remotos:
+                return jsonify({"respuesta": f"No encontré coincidencias para '{user_message}'. Intenta otro nombre o 'ninguno'."})
+            # Si la mejor tiene score muy alto, usar directa
+            if candidatos_remotos[0]['score'] >= 85:
+                collected_data['persona_id'] = candidatos_remotos[0]['id']
+                recomendaciones = await recomendar_con_chatbot(client, collected_data)
+                session.clear()
+                return jsonify({
+                    "respuesta": "¡Aquí tienes tus recomendaciones! " + ", ".join(recomendaciones),
+                    "recomendaciones": recomendaciones,
+                    "seleccion_persona": candidatos_remotos[0]
+                })
+            # Pedir confirmación con candidatos remotos
+            session['state'] = 'S3_CONFIRMAR_PERSONA'
+            session['data'] = collected_data
+            session['candidatos'] = candidatos_remotos
+            return jsonify({
+                "respuesta": "¿A quién te refieres? Envía el ID de la lista:",
+                "opciones_persona": candidatos_remotos
+            })
+
+    # ESTADO S3_CONFIRMAR_PERSONA: usuario envía ID elegido
+    elif current_state == 'S3_CONFIRMAR_PERSONA':
+        candidatos = session.get('candidatos', [])
+        collected_data = session.get('data', {})
+        normalized_query = normalizar_texto(user_message)
+        # Permitir 'ninguno' aún aquí
+        ninguno_match = process.extractOne(
+            normalized_query,
+            NINGUNO_CHOICES,
+            scorer=fuzz.token_set_ratio,
+            score_cutoff=80
+        )
+        if ninguno_match:
+            # Ignorar persona y recomendar
+            async with httpx.AsyncClient() as client:
+                recomendaciones = await recomendar_con_chatbot(client, collected_data)
+            session.clear()
+            return jsonify({
+                "respuesta": "¡Aquí tienes tus recomendaciones! " + ", ".join(recomendaciones),
+                "recomendaciones": recomendaciones
+            })
+        # Intentar parsear ID
+        try:
+            elegido_id = int(user_message.strip())
+        except ValueError:
+            return jsonify({"respuesta": "Por favor envía el ID numérico (o 'ninguno')."})
+        if not any(c['id'] == elegido_id for c in candidatos):
+            return jsonify({"respuesta": "ID no válido. Reenvía uno de los mostrados o 'ninguno'."})
+        collected_data['persona_id'] = elegido_id
+        async with httpx.AsyncClient() as client:
             recomendaciones = await recomendar_con_chatbot(client, collected_data)
-
         session.clear()
-        
-        # Formatear la respuesta final
-        if recomendaciones:
-            respuesta_final = "¡Aquí tienes tus recomendaciones! " + ", ".join(recomendaciones)
-        else:
-            respuesta_final = "No encontré películas con esos criterios. ¡Empecemos de nuevo!"
-            
         return jsonify({
-            "respuesta": respuesta_final,
+            "respuesta": "¡Aquí tienes tus recomendaciones! " + ", ".join(recomendaciones),
             "recomendaciones": recomendaciones,
-            "criterios_usados": collected_data
+            "persona_confirmada": elegido_id
         })
     
     session.clear()
@@ -702,86 +778,135 @@ async def get_recomendaciones_favoritos():
         "basado_en": favoritos_tmdb_ids,
         "recomendaciones": resultados_finales
     })
-
-# ================================= RUTAS DEL FRONTEND ===================================================
+# ===================== RUTAS DE PLANTILLAS FRONTEND =====================
+# Colocadas ANTES de app.run para que se registren correctamente.
 
 @app.route('/')
 def index():
-    """Página principal del sistema"""
     return render_template('index.html')
 
 @app.route('/top-movies')
 def top_movies():
-    """Página de mejores películas (Top N Ponderado)"""
     return render_template('top_movies.html')
 
 @app.route('/teoria')
 def teoria():
-    """Página explicativa de la teoría matemática"""
     return render_template('teoria.html')
 
-@app.route('/resultados')
-def resultados():
-    """Página de resultados de búsqueda"""
-    return render_template('resultados.html')
+# ===================== ENDPOINTS DE APOYO FRONTEND ======================
 
-# Endpoint para obtener películas más populares (Top N Ponderado)
-@app.route('/api/top-peliculas')
-def api_top_peliculas():
-    """
-    Endpoint para obtener las mejores películas usando función de media ponderada.
-    Implementa el concepto de Top N Ponderado del proyecto.
+@app.route('/peliculas/disponibles')
+def peliculas_disponibles():
+    """Devuelve los TMDb IDs disponibles en el modelo para la IA.
+    Usa el mapa movielens_to_tmdb cargado al inicio.
     """
     try:
-        # Obtener películas populares de TMDb
-        url = f"{BASE_URL}/movie/popular"
-        params = {
-            'api_key': API_KEY,
-            'language': 'es-ES',
-            'page': 1
-        }
-        
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        peliculas = response.json().get('results', [])
-        
-        # Calcular puntuación ponderada: (rating * num_votos) / (num_votos + constante)
-        # Esta es la función de Media Ponderada mencionada en el proyecto
-        peliculas_ponderadas = []
-        
-        for pelicula in peliculas[:20]:  # Top 20
-            rating = pelicula.get('vote_average', 0)
-            votos = pelicula.get('vote_count', 0)
-            
-            # Función de ponderación (similar a IMDb weighted rating)
-            # W = (v ÷ (v+m)) × R + (m ÷ (v+m)) × C
-            # donde: v = votos, m = mínimo votos, R = rating promedio, C = rating global promedio
-            m = 1000  # Mínimo de votos requeridos
-            C = 7.0   # Rating promedio global
-            
-            if votos >= 100:  # Filtrar películas con pocos votos
-                peso_ponderado = (votos / (votos + m)) * rating + (m / (votos + m)) * C
-                
-                peliculas_ponderadas.append({
-                    "tmdb_id": pelicula['id'],
-                    "titulo": pelicula['title'],
-                    "rating_original": rating,
-                    "votos": votos,
-                    "puntuacion_ponderada": round(peso_ponderado, 2),
-                    "poster_url": f"{IMAGE_BASE_URL}{pelicula.get('poster_path', '')}",
-                    "overview": pelicula.get('overview', 'No disponible')
-                })
-        
-        # Ordenar por puntuación ponderada
-        peliculas_ponderadas.sort(key=lambda x: x['puntuacion_ponderada'], reverse=True)
-        
-        return jsonify({
-            "peliculas": peliculas_ponderadas,
-            "explicacion": "Ranking calculado usando función de media ponderada: W = (v÷(v+m)) × R + (m÷(v+m)) × C"
-        })
-        
-    except requests.RequestException as e:
-        return jsonify({"error": "Error al obtener datos de películas"}), 500
+        if 'movielens_to_tmdb' not in globals() or movielens_to_tmdb is None:
+            return jsonify({"error": "Modelo no cargado"}), 503
+        # Valores únicos de TMDb
+        tmdb_ids = list(set(movielens_to_tmdb.values()))
+        return jsonify({"tmdb_ids": tmdb_ids})
+    except Exception as e:
+        return jsonify({"error": f"Error obteniendo IDs disponibles: {e}"}), 500
 
+@app.route('/api/top-peliculas')
+def api_top_peliculas():
+    """Genera un ranking ponderado de películas usando la fórmula IMDb-like.
+    W = (v/(v+m))*R + (m/(v+m))*C
+    Se usa /movie/popular para obtener una lista base.
+    """
+    try:
+        url = f"{BASE_URL}/movie/popular"
+        params = {"api_key": API_KEY, "language": "es-ES", "page": 1}
+        resp = requests.get(url, params=params, timeout=10)
+        resp.raise_for_status()
+        resultados = resp.json().get('results', [])
+    except requests.RequestException as e:
+        return jsonify({"error": f"Error consultando TMDb: {e}"}), 500
+
+    # Parámetros de ponderación
+    m = 1000  # mínimo de votos requerido
+    C = 7.0   # rating promedio global aproximado
+
+    ranking = []
+    for r in resultados:
+        votos = r.get('vote_count', 0)
+        rating = r.get('vote_average', 0.0)
+        # Evitar división por cero
+        ponderado = ((votos / (votos + m)) * rating) + ((m / (votos + m)) * C) if (votos + m) > 0 else 0
+        ranking.append({
+            "tmdb_id": r.get('id'),
+            "titulo": r.get('title'),
+            "poster_url": f"{IMAGE_BASE_URL}{r.get('poster_path', '')}",
+            "overview": r.get('overview', ''),
+            "votos": votos,
+            "rating_original": rating,
+            "puntuacion_ponderada": round(ponderado, 3)
+        })
+
+    # Orden descendente por puntuación ponderada
+    ranking_ordenado = sorted(ranking, key=lambda x: x['puntuacion_ponderada'], reverse=True)
+    return jsonify({"peliculas": ranking_ordenado[:20]})
+
+# ===================== CATÁLOGOS PARA FRONTEND ======================
+
+@app.route('/api/genres')
+def api_genres():
+    """Devuelve lista de géneros TMDb (id, name)."""
+    try:
+        url = f"{BASE_URL}/genre/movie/list"
+        params = {"api_key": API_KEY, "language": "es-ES"}
+        resp = requests.get(url, params=params, timeout=10)
+        resp.raise_for_status()
+        genres = resp.json().get('genres', [])
+        return jsonify({"genres": genres})
+    except requests.RequestException as e:
+        return jsonify({"error": f"Error consultando géneros: {e}"}), 500
+
+@app.route('/api/person/popular')
+def api_person_popular():
+    """Devuelve personas populares (id, name, known_for_department)."""
+    return jsonify({"error": "Este endpoint ha sido reemplazado por /api/catalogo/personas"}), 410
+
+# Catálogo fijo solicitado
+directores_tmdb = [
+    {"nombre": "Christopher Nolan", "id": 525},
+    {"nombre": "Steven Spielberg", "id": 488},
+    {"nombre": "Quentin Tarantino", "id": 138},
+    {"nombre": "Martin Scorsese", "id": 1032},
+    {"nombre": "Stanley Kubrick", "id": 240},
+    {"nombre": "Guillermo del Toro", "id": 10828},
+    {"nombre": "Greta Gerwig", "id": 139820},
+    {"nombre": "James Cameron", "id": 2710},
+    {"nombre": "Tim Burton", "id": 510},
+    {"nombre": "Hayao Miyazaki", "id": 608},
+    {"nombre": "Francis Ford Coppola", "id": 1776},
+    {"nombre": "Alfred Hitchcock", "id": 2636}
+]
+
+actores_tmdb = [
+    {"nombre": "Brad Pitt", "id": 287},
+    {"nombre": "Tom Cruise", "id": 500},
+    {"nombre": "Leonardo DiCaprio", "id": 6193},
+    {"nombre": "Robert Downey Jr.", "id": 3223},
+    {"nombre": "Scarlett Johansson", "id": 1245},
+    {"nombre": "Johnny Depp", "id": 85},
+    {"nombre": "Tom Hanks", "id": 31},
+    {"nombre": "Margot Robbie", "id": 234352},
+    {"nombre": "Meryl Streep", "id": 5064},
+    {"nombre": "Denzel Washington", "id": 5292},
+    {"nombre": "Emma Stone", "id": 54693},
+    {"nombre": "Cillian Murphy", "id": 2037}
+]
+
+@app.route('/api/catalogo/personas')
+def api_catalogo_personas():
+    """Devuelve catálogos fijos de directores y actores para selección frontend."""
+    return jsonify({
+        "directores": directores_tmdb,
+        "actores": actores_tmdb
+    })
+
+# =============== EJECUCIÓN DEL SERVIDOR ===============
 if __name__ == '__main__':
     app.run(debug=True)
