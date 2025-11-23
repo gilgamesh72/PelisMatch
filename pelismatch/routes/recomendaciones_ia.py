@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 import asyncio
 import httpx
 import logging
-from ..services import obtener_recomendaciones_ia, fetch_movie_details, obtener_peliculas_disponibles
+from ..services import obtener_recomendaciones_ia, fetch_movie_details, obtener_peliculas_disponibles, resolver_titulos_a_ids
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -13,16 +13,29 @@ bp = Blueprint('recomendaciones_ia', __name__)
 async def get_recomendaciones_favoritos():
     try:
         data = request.get_json()
-        favoritos_tmdb_ids = data.get('favoritos_tmdb_ids', [])
-        # Asegurarnos de que sean enteros
-        favoritos_tmdb_ids = [int(id) for id in favoritos_tmdb_ids]
+
+        # Soportamos dos formatos de entrada:
+        # 1) {'favoritos_tmdb_ids': [id1, id2, ...]}
+        # 2) {'favoritos': ['The Matrix', 'Toy Story', ...]} (recomendado)
+
+        if 'favoritos_tmdb_ids' in data:
+            favoritos_tmdb_ids = [int(x) for x in data.get('favoritos_tmdb_ids', [])]
+        else:
+            favoritos = data.get('favoritos', [])
+            # resolver titulos a ids usando el servicio de modelo
+            resolver = resolver_titulos_a_ids(favoritos)
+            if resolver is None:
+                return jsonify({"error": "Modelo no cargado para resolver títulos."}), 503
+            favoritos_tmdb_ids = resolver.get('resolved', [])
+            unresolved = resolver.get('unresolved', [])
     except Exception:
-        return jsonify({"error": "JSON mal formateado. Se esperaba {'favoritos_tmdb_ids': [id1, id2, ...]}"}), 400
+        return jsonify({"error": "JSON mal formateado. Se esperaba {'favoritos': [titulo1, titulo2,...]} o {'favoritos_tmdb_ids': [id1,...]}"}), 400
     
 
 
     if not favoritos_tmdb_ids:
-        return jsonify({"error": "La lista de favoritos está vacía."}), 400
+        return jsonify({"error": "La lista de favoritos está vacía o no se pudieron resolver los títulos proporcionados.",
+                        "unresolved": unresolved if 'unresolved' in locals() else []}), 400
 
     disponibles = obtener_peliculas_disponibles()
     if disponibles is None:
@@ -58,10 +71,15 @@ async def get_recomendaciones_favoritos():
     
     resultados_finales = [res for res in resultados_detalles if res is not None]
 
-    return jsonify({
+    response = {
         "basado_en": favoritos_tmdb_ids,
         "recomendaciones": resultados_finales
-    })
+    }
+    # Si venían títulos y hubo no resueltos, añadirlos al response
+    if 'unresolved' in locals() and unresolved:
+        response['no_resueltos'] = unresolved
+
+    return jsonify(response)
 
 
 @bp.route('/peliculas/disponibles')
