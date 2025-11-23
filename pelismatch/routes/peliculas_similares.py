@@ -54,7 +54,8 @@ async def get_similares(nombre_pelicula):
                 resultados_similares.append({
                     "nombre": vecino_completo['title'],
                     "similitud": peso_arista,
-                    "poster_url": f"{IMAGE_BASE_URL}{vecino_completo.get('poster_path', '')}"
+                    "poster_url": f"{IMAGE_BASE_URL}{vecino_completo.get('poster_path', '')}",
+                    "id": vecino_completo.get('id'),
                 })
 
     # 4. Ordenar los vecinos por el peso calculado

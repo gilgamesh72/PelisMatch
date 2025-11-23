@@ -1,13 +1,44 @@
-"""
-PelisMatch - Sistema de recomendación de películas
-Punto de entrada de la aplicación
-"""
-from pelismatch import create_app
+from flask import Flask, jsonify, request, session, render_template
+from rapidfuzz import fuzz, process
+import requests
+import asyncio
+import httpx
+import numpy as np
+import json
+from sklearn.metrics.pairwise import cosine_similarity
+app = Flask(__name__)
+# Clave para manejar 'session' en endpoints como /chatbot
+app.secret_key = "pelismatch_secret_key"  # Ajusta a algo seguro en producción
 
-app = create_app()
+# --- 1. CONFIGURACIÓN DE TMDb ---
+API_KEY = "310313c5dfcadae4d9bb178828d491a0" 
+BASE_URL = "https://api.themoviedb.org/3"
+# URL para las imágenes (para que tu compañera de frontend las muestre)
+IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# --- 2. LÓGICA DEL GRAFO (Cálculo de Pesos) ---
+W_DIRECTOR = 3.0
+W_GENERO = 2.0
+W_ACTOR = 1.5
+
+#=============================NODOS====================================================
+
+async def fetch_movie_details_and_credits(client, movie_id):
+    """
+    Función asíncrona para obtener detalles y créditos de una película en una sola llamada.
+    """
+    url = f"{BASE_URL}/movie/{movie_id}"
+    # append_to_response=credits es la clave para la optimización
+    params = {'api_key': API_KEY, 'language': 'es-ES', 'append_to_response': 'credits'}
+    try:
+        response = await client.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+    except httpx.RequestError as e:
+        print(f"Error fetching details for movie {movie_id}: {e}")
+        return None
+
+def calcular_similitud_optimizado(pelicula_a, pelicula_b):
     """
     Calcula la similitud usando datos pre-cargados que incluyen los créditos.
     """

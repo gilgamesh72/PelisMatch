@@ -49,10 +49,15 @@
                 
                 <div class="mt-4">
                     <p class="text-muted small">Primero agrega películas a favoritos</p>
-                    <button class="btn btn-outline-gradient" onclick="mostrarFavoritos()">
-                        <i class="fas fa-heart me-2"></i>Ver Favoritos 
-                        <span class="badge bg-pink ms-1" id="favoritos-count-main">0</span>
-                    </button>
+                    <div class="d-flex gap-2 flex-wrap justify-content-center">
+                        <button class="btn btn-outline-gradient btn-sm" onclick="mostrarPeliculasCompatibles()">
+                            <i class="fas fa-robot me-1"></i>Películas IA
+                        </button>
+                        <button class="btn btn-outline-gradient" onclick="mostrarFavoritos()">
+                            <i class="fas fa-heart me-2"></i>Ver Favoritos 
+                            <span class="badge bg-pink ms-1" id="favoritos-count-main">0</span>
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="mt-3">
@@ -167,50 +172,56 @@
                         <!-- Incluir -->
                         <div class="col-md-6">
                             <h6 class="text-gradient">✅ Quiero que tenga</h6>
-                            
+
                             <div class="mb-3">
                                 <label class="form-label">Géneros</label>
-                                <input type="text" class="form-control" id="incluir-generos" 
-                                       placeholder="Ej: 28 (Acción), 35 (Comedia), 18 (Drama)">
+                                <div id="incluir-generos-list" class="row g-2">
+                                    <!-- Checkboxes dinámicos -->
+                                </div>
                             </div>
-                            
+
                             <div class="mb-3">
-                                <label class="form-label">Actores</label>
-                                <input type="text" class="form-control" id="incluir-actores" 
-                                       placeholder="Busca por ID de actor (ej: 500, 1000)">
+                                <label class="form-label">Actores Populares</label>
+                                <div id="incluir-actores-list" class="list-group" style="max-height: 180px; overflow:auto;">
+                                    <!-- Lista dinámica -->
+                                </div>
                             </div>
-                            
+
                             <div class="mb-3">
-                                <label class="form-label">Directores</label>
-                                <input type="text" class="form-control" id="incluir-directores" 
-                                       placeholder="Busca por ID de director (ej: 138, 1893)">
+                                <label class="form-label">Directores Populares</label>
+                                <div id="incluir-directores-list" class="list-group" style="max-height: 180px; overflow:auto;">
+                                    <!-- Lista dinámica -->
+                                </div>
                             </div>
                         </div>
-                        
+
                         <!-- Excluir -->
                         <div class="col-md-6">
                             <h6 class="text-gradient">❌ No quiero que tenga</h6>
-                            
+
                             <div class="mb-3">
                                 <label class="form-label">Géneros</label>
-                                <input type="text" class="form-control" id="excluir-generos" 
-                                       placeholder="Ej: 27,53 (Terror, Suspense)">
+                                <div id="excluir-generos-list" class="row g-2">
+                                    <!-- Checkboxes dinámicos -->
+                                </div>
                             </div>
-                            
+
                             <div class="mb-3">
-                                <label class="form-label">Actores</label>
-                                <input type="text" class="form-control" id="excluir-actores" 
-                                       placeholder="IDs de actores a excluir">
+                                <label class="form-label">Actores Populares</label>
+                                <div id="excluir-actores-list" class="list-group" style="max-height: 180px; overflow:auto;">
+                                    <!-- Lista dinámica -->
+                                </div>
                             </div>
-                            
+
                             <div class="mb-3">
-                                <label class="form-label">Directores</label>
-                                <input type="text" class="form-control" id="excluir-directores" 
-                                       placeholder="IDs de directores a excluir">
+                                <label class="form-label">Directores Populares</label>
+                                <div id="excluir-directores-list" class="list-group" style="max-height: 180px; overflow:auto;">
+                                    <!-- Lista dinámica -->
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="text-center">
                         <button type="submit" class="btn btn-gradient">
                             <i class="fas fa-search me-2"></i>Buscar Películas
@@ -221,11 +232,59 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de Favoritos -->
+<div class="modal fade" id="favoritosModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-gradient">
+                    <i class="fas fa-heart me-2"></i>Mis Películas Favoritas
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Estas películas se usan para generar recomendaciones con IA
+                    </span>
+                    <div>
+                        <button class="btn btn-outline-light btn-sm me-2" onclick="exportarFavoritos()">
+                            <i class="fas fa-download me-1"></i>Exportar
+                        </button>
+                        <button class="btn btn-outline-light btn-sm me-2" onclick="importarFavoritos()">
+                            <i class="fas fa-upload me-1"></i>Importar
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="limpiarFavoritos()">
+                            <i class="fas fa-trash me-1"></i>Limpiar Todo
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="row" id="favoritos-lista">
+                    <!-- Contenido dinámico generado por favoritos.js -->
+                </div>
+                
+                <div class="text-center mt-4">
+                    <button class="btn btn-gradient btn-lg" onclick="recomendarPorFavoritos()" id="btn-recomendar-favoritos">
+                        <i class="fas fa-magic me-2"></i>Generar Recomendaciones IA
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
 <script>
+// Caches de catálogos
+let CATALOG_GENRES = [];
+let CATALOG_ACTORS = [];
+let CATALOG_DIRECTORS = [];
+
 // Inicialización de la página
 document.addEventListener('DOMContentLoaded', function() {
     // Actualizar contador de favoritos
@@ -296,7 +355,12 @@ function mostrarResultados(data, tipo) {
                 </div>
                 <div class="col-md-9">
                     <h5 class="text-gradient">${data.pelicula_buscada.nombre}</h5>
-                    <p class="text-muted">${data.pelicula_buscada.overview || 'Descripción no disponible'}</p>
+                    <p class="text-light mb-3">${data.pelicula_buscada.overview || 'Descripción no disponible'}</p>
+                    <div class="mt-3">
+                        <button class="btn btn-outline-light btn-sm" onclick="agregarAFavoritos(${data.pelicula_buscada.tmdb_id}, '${data.pelicula_buscada.nombre}', '${data.pelicula_buscada.poster_url}')">
+                            <i class="fas fa-heart me-2"></i>Agregar a Favoritos
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -315,7 +379,7 @@ function mostrarResultados(data, tipo) {
                         <h6 class="text-white mb-2">${pelicula.nombre || pelicula.titulo}</h6>
                         ${pelicula.similitud ? `<span class="similarity-score">Similitud: ${pelicula.similitud.toFixed(2)}</span>` : ''}
                         <div class="mt-2">
-                            <button class="btn btn-outline-light btn-sm" onclick="agregarAFavoritos(${pelicula.tmdb_id || Math.random()}, '${pelicula.nombre || pelicula.titulo}', '${pelicula.poster_url}')">
+                            <button class="btn btn-outline-light btn-sm" onclick="agregarAFavoritos(${pelicula.tmdb_id || pelicula.tmdb_id}, '${pelicula.nombre || pelicula.titulo}', '${pelicula.poster_url}')">
                                 <i class="fas fa-heart"></i>
                             </button>
                         </div>
@@ -351,23 +415,145 @@ function mostrarError(mensaje) {
     seccion.scrollIntoView({ behavior: 'smooth' });
 }
 
+// Función para mostrar películas compatibles con IA
+async function mostrarPeliculasCompatibles() {
+    try {
+        const response = await fetch('/peliculas/disponibles');
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Buscar detalles de las películas sugeridas
+            const detallesPromises = data.tmdb_ids.slice(0, 6).map(async (tmdbId) => {
+                try {
+                    const detailResponse = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}?api_key=310313c5dfcadae4d9bb178828d491a0&language=es-ES`);
+                    return await detailResponse.json();
+                } catch {
+                    return null;
+                }
+            });
+            
+            const peliculasDetalles = await Promise.all(detallesPromises);
+            const peliculasValidas = peliculasDetalles.filter(p => p);
+            
+            // Mostrar en la sección de resultados
+            mostrarResultadosEspeciales(peliculasValidas, 'películas compatibles con IA', 
+                'Estas películas SÍ funcionan con las recomendaciones de inteligencia artificial:');
+        } else {
+            mostrarError(data.error || 'Error obteniendo películas compatibles');
+        }
+    } catch (error) {
+        mostrarError('Error de conexión');
+    }
+}
+
+// Función para mostrar resultados especiales (películas compatibles)
+function mostrarResultadosEspeciales(peliculas, tipo, descripcion) {
+    const seccion = document.getElementById('seccion-resultados');
+    const infoBusqueda = document.getElementById('info-busqueda');
+    const peliculaBase = document.getElementById('pelicula-base');
+    const listaSimilares = document.getElementById('lista-similares');
+    
+    infoBusqueda.innerHTML = `
+        <span class="text-gradient">${tipo}</span>
+        <br><small class="text-muted">${descripcion}</small>
+    `;
+    peliculaBase.style.display = 'none';
+    
+    listaSimilares.innerHTML = peliculas.map(pelicula => `
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="movie-card">
+                <img src="https://image.tmdb.org/t/p/w500${pelicula.poster_path}" class="movie-poster" alt="${pelicula.title}">
+                <div class="movie-info">
+                    <h6 class="text-white mb-2">${pelicula.title}</h6>
+                    <small class="text-success"><i class="fas fa-robot me-1"></i>Compatible IA</small>
+                    <div class="mt-2">
+                        <button class="btn btn-gradient btn-sm" onclick="agregarAFavoritos(${pelicula.id}, '${pelicula.title}', 'https://image.tmdb.org/t/p/w500${pelicula.poster_path}')">
+                            <i class="fas fa-heart me-1"></i>Agregar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    seccion.classList.remove('d-none');
+    seccion.scrollIntoView({ behavior: 'smooth' });
+}
+
 // Función para abrir filtros avanzados
 function abrirFiltrosAvanzados() {
     const modal = new bootstrap.Modal(document.getElementById('filtrosModal'));
+    cargarCatalogosAvanzados();
     modal.show();
+}
+
+// Cargar catálogos para filtros (géneros y personas populares)
+async function cargarCatalogosAvanzados() {
+    try {
+        // Cargar géneros si no están
+        if (CATALOG_GENRES.length === 0) {
+            const resG = await fetch('/api/genres');
+            const dataG = await resG.json();
+            if (resG.ok) {
+                CATALOG_GENRES = dataG.genres || [];
+                renderCheckboxGenres('incluir-generos-list', CATALOG_GENRES, 'inc-gen');
+                renderCheckboxGenres('excluir-generos-list', CATALOG_GENRES, 'exc-gen');
+            }
+        }
+
+        // Cargar personas populares si no están
+        if (CATALOG_ACTORS.length === 0 || CATALOG_DIRECTORS.length === 0) {
+            const resP = await fetch('/api/catalogo/personas');
+            const dataP = await resP.json();
+            if (resP.ok) {
+                CATALOG_ACTORS = dataP.actores || [];
+                CATALOG_DIRECTORS = dataP.directores || [];
+                renderPersonList('incluir-actores-list', CATALOG_ACTORS, 'inc-act');
+                renderPersonList('excluir-actores-list', CATALOG_ACTORS, 'exc-act');
+                renderPersonList('incluir-directores-list', CATALOG_DIRECTORS, 'inc-dir');
+                renderPersonList('excluir-directores-list', CATALOG_DIRECTORS, 'exc-dir');
+            }
+        }
+    } catch (e) {
+        console.error('Error cargando catálogos:', e);
+    }
+}
+
+function renderCheckboxGenres(containerId, genres, prefix) {
+    const cont = document.getElementById(containerId);
+    if (!cont) return;
+    cont.innerHTML = genres.map(g => `
+        <div class="col-6 col-md-4">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="${g.id}" id="${prefix}-${g.id}">
+                <label class="form-check-label" for="${prefix}-${g.id}">${g.name}</label>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderPersonList(containerId, persons, prefix) {
+    const cont = document.getElementById(containerId);
+    if (!cont) return;
+    cont.innerHTML = persons.map(p => `
+        <label class="list-group-item d-flex align-items-center">
+            <input class="form-check-input me-2" type="checkbox" value="${p.id}" id="${prefix}-${p.id}">
+            <span>${p.nombre}</span>
+        </label>
+    `).join('');
 }
 
 // Función para aplicar filtros lógicos
 async function aplicarFiltrosLogicos(event) {
     event.preventDefault();
-    
-    const incluirGeneros = document.getElementById('incluir-generos').value.split(',').map(s => s.trim()).filter(s => s);
-    const incluirActores = document.getElementById('incluir-actores').value.split(',').map(s => s.trim()).filter(s => s);
-    const incluirDirectores = document.getElementById('incluir-directores').value.split(',').map(s => s.trim()).filter(s => s);
-    const excluirGeneros = document.getElementById('excluir-generos').value.split(',').map(s => s.trim()).filter(s => s);
-    const excluirActores = document.getElementById('excluir-actores').value.split(',').map(s => s.trim()).filter(s => s);
-    const excluirDirectores = document.getElementById('excluir-directores').value.split(',').map(s => s.trim()).filter(s => s);
-    
+    // Recolectar IDs seleccionados desde checkboxes
+    const incluirGeneros = Array.from(document.querySelectorAll('#incluir-generos-list input[type="checkbox"]:checked')).map(cb => parseInt(cb.value));
+    const excluirGeneros = Array.from(document.querySelectorAll('#excluir-generos-list input[type="checkbox"]:checked')).map(cb => parseInt(cb.value));
+    const incluirActores = Array.from(document.querySelectorAll('#incluir-actores-list input[type="checkbox"]:checked')).map(cb => parseInt(cb.value));
+    const excluirActores = Array.from(document.querySelectorAll('#excluir-actores-list input[type="checkbox"]:checked')).map(cb => parseInt(cb.value));
+    const incluirDirectores = Array.from(document.querySelectorAll('#incluir-directores-list input[type="checkbox"]:checked')).map(cb => parseInt(cb.value));
+    const excluirDirectores = Array.from(document.querySelectorAll('#excluir-directores-list input[type="checkbox"]:checked')).map(cb => parseInt(cb.value));
+
     const filtros = {
         incluir: {
             generos: incluirGeneros,
