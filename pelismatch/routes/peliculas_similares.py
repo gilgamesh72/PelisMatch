@@ -52,6 +52,7 @@ async def get_similares(nombre_pelicula):
             
             if peso_arista > 0:
                 resultados_similares.append({
+                    "id": vecino_completo.get('id'),
                     "nombre": vecino_completo['title'],
                     "similitud": peso_arista,
                     "poster_url": f"{IMAGE_BASE_URL}{vecino_completo.get('poster_path', '')}"

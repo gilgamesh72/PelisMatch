@@ -32,12 +32,27 @@ function actualizarContadorFavoritos() {
 
 // Función para agregar película a favoritos
 function agregarAFavoritos(tmdbId, titulo, posterUrl) {
-    // Convertir a número para asegurar formato correcto
-    const numericId = parseInt(tmdbId) || Math.floor(Math.random() * 1000000);
-    
-    // Verificar si ya está en favoritos
-    const yaExiste = favoritos.find(fav => fav.tmdb_id === numericId);
-    
+    // Guardar llamada para depuración (inspeccionar en consola)
+    try { window.__lastAgregarFavoritosCall = { raw: tmdbId, titulo: titulo, posterUrl: posterUrl, ts: Date.now() }; } catch(e) {}
+
+    // Convertir a número para asegurar formato correcto (tolerante a strings numéricos)
+    let numericId = Number(tmdbId);
+    if (!Number.isFinite(numericId) || !Number.isInteger(numericId)) {
+        // intentar parseInt como fallback
+        const maybe = parseInt(String(tmdbId).replace(/[^0-9]/g, ''), 10);
+        numericId = Number.isFinite(maybe) ? maybe : NaN;
+    }
+
+    if (!Number.isFinite(numericId) || numericId <= 0) {
+        mostrarNotificacion('⚠️ ID de película inválido', 'warning');
+        console.warn('Intento de agregar favorito con tmdbId inválido:', tmdbId);
+        try { window.__lastAgregarFavoritosCall.parsed = numericId; } catch(e) {}
+        return;
+    }
+
+    // Verificar si ya está en favoritos (comparación numérica correcta)
+    const yaExiste = favoritos.find(fav => Number(fav.tmdb_id) === numericId);
+
     if (yaExiste) {
         mostrarNotificacion('⚠️ Esta película ya está en tus favoritos', 'warning');
         return;
@@ -61,7 +76,9 @@ function agregarAFavoritos(tmdbId, titulo, posterUrl) {
 
 // Función para remover de favoritos
 function removerDeFavoritos(tmdbId) {
-    const index = favoritos.findIndex(fav => fav.tmdb_id === tmdbId);
+    const idNum = Number(tmdbId);
+    const index = favoritos.findIndex(fav => Number(fav.tmdb_id) === idNum);
+    //const index = favoritos.findIndex(fav => fav.tmdb_id === tmdbId);
     
     if (index !== -1) {
         const titulo = favoritos[index].titulo;
