@@ -3,77 +3,662 @@
 {% block title %}Resultados - PelisMatch{% endblock %}
 
 {% block content %}
+<!-- Breadcrumb -->
 <div class="container mt-4">
-    <div class="row mb-3">
-        <div class="col-12">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb bg-transparent p-0">
-                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Inicio</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Resultados</li>
-                </ol>
-            </nav>
-            <h2 class="text-gradient">Resultados</h2>
-        </div>
-    </div>
-
-    <div id="search-info-section" class="mb-3" style="display:none;">
-        <div id="algorithm-description" class="text-light small"></div>
-    </div>
-
-    <div id="base-movie-section" class="mb-4" style="display:none;">
-        <div id="base-movie-content"></div>
-    </div>
-
-    <div class="row mb-2 align-items-center">
-        <div class="col-md-8">
-            <div class="d-flex align-items-center gap-3">
-                <div>Resultados: <strong id="total-results">0</strong></div>
-                <div>Procesado: <span id="processing-time">0s</span></div>
-                <div>Promedio similitud: <strong id="avg-similarity">N/A</strong></div>
-            </div>
-        </div>
-        <div class="col-md-4 text-end">
-            <button class="btn btn-sm btn-outline-light" onclick="exportarResultados()">Exportar</button>
-        </div>
-    </div>
-
-    <div id="loading-state" style="display:none;" class="row">
-        <div class="col-12 text-center py-4 text-light">Cargando resultados...</div>
-    </div>
-
-    <div id="empty-state" class="row d-none">
-        <div class="col-12 text-center py-4 text-muted">
-            No se encontraron resultados. Ajusta tu búsqueda.
-        </div>
-    </div>
-
-    <div id="results-container" class="row"></div>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-transparent">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('index') }}" class="text-gradient">
+                    <i class="fas fa-home me-1"></i>Inicio
+                </a>
+            </li>
+            <li class="breadcrumb-item active text-light">Resultados</li>
+        </ol>
+    </nav>
 </div>
 
-<!-- Modal de detalles de película (llenado por JS) -->
+<!-- Header de Resultados -->
+<div class="container mb-4">
+    <div class="text-center">
+        <h1 class="text-gradient mb-3">
+            <i class="fas fa-chart-line me-2"></i>Resultados de Búsqueda
+        </h1>
+        <p class="lead text-muted">Recomendaciones generadas por nuestros algoritmos de matemáticas discretas</p>
+    </div>
+</div>
+
+<!-- Información de la Búsqueda -->
+<div class="container mb-4" id="search-info-section" style="display: none;">
+    <div class="alert alert-info border-0" style="background: rgba(116, 185, 255, 0.1);">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="alert-heading mb-2">
+                    <i class="fas fa-brain me-2"></i>Algoritmo Utilizado
+                </h5>
+                <p class="mb-0" id="algorithm-description">
+                    <!-- Descripción dinámica del algoritmo -->
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-outline-light" onclick="nuevaBusqueda()">
+                    <i class="fas fa-search me-2"></i>Nueva Búsqueda
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Película Base (Nodo Central) -->
+<div class="container mb-5" id="base-movie-section" style="display: none;">
+    <div class="card bg-dark border-secondary shadow-lg">
+        <div class="card-header bg-gradient text-white">
+            <h4 class="mb-0">
+                <i class="fas fa-bullseye me-2"></i>Nodo Central (Película Base)
+            </h4>
+            <small>Esta es la película que se utilizó como punto de referencia para el cálculo</small>
+        </div>
+        <div class="card-body" id="base-movie-content">
+            <!-- Contenido dinámico -->
+        </div>
+    </div>
+</div>
+
+<!-- Sección de Resultados -->
+<div class="container mb-5">
+    <div class="row" id="results-container">
+        <!-- Estado inicial: Cargando -->
+        <div class="col-12 text-center py-5" id="loading-state">
+            <div class="loading mx-auto mb-3" style="width: 40px; height: 40px;"></div>
+            <p class="text-muted">Procesando algoritmos matemáticos...</p>
+        </div>
+        
+        <!-- Estado: Sin resultados -->
+        <div class="col-12 text-center py-5 d-none" id="empty-state">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h4 class="text-gradient">No hay resultados disponibles</h4>
+            <p class="text-muted">Intenta con diferentes criterios de búsqueda</p>
+            <a href="{{ url_for('index') }}" class="btn btn-gradient">
+                <i class="fas fa-home me-2"></i>Volver al Inicio
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Panel de Filtros Rápidos -->
+<div class="container mb-4">
+    <div class="card bg-dark border-secondary">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-filter me-2"></i>Filtros Rápidos
+                <button class="btn btn-sm btn-outline-light float-end" onclick="toggleFilters()">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </h5>
+        </div>
+        <div class="card-body collapse" id="quick-filters">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label small">Similitud mínima</label>
+                    <input type="range" class="form-range" id="similarity-filter" 
+                           min="0" max="10" step="0.1" value="0" 
+                           onchange="aplicarFiltroSimilitud(this.value)">
+                    <small class="text-muted">Valor: <span id="similarity-value">0</span></small>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Ordenar por</label>
+                    <select class="form-select form-select-sm" onchange="ordenarResultados(this.value)">
+                        <option value="similitud">Similitud (desc)</option>
+                        <option value="titulo">Título (A-Z)</option>
+                        <option value="fecha">Fecha agregado</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Mostrar</label>
+                    <select class="form-select form-select-sm" onchange="cambiarVisualizacion(this.value)">
+                        <option value="grid">Vista en Grilla</option>
+                        <option value="list">Vista en Lista</option>
+                        <option value="compact">Vista Compacta</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-outline-light w-100" onclick="exportarResultados()">
+                        <i class="fas fa-download me-2"></i>Exportar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas de Resultados -->
+<div class="container mb-4">
+    <div class="row text-center">
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body">
+                    <i class="fas fa-film fa-2x text-gradient mb-2"></i>
+                    <h4 class="text-white mb-0" id="total-results">-</h4>
+                    <small class="text-muted">Películas encontradas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body">
+                    <i class="fas fa-chart-line fa-2x text-gradient mb-2"></i>
+                    <h4 class="text-white mb-0" id="avg-similarity">-</h4>
+                    <small class="text-muted">Similitud promedio</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body">
+                    <i class="fas fa-clock fa-2x text-gradient mb-2"></i>
+                    <h4 class="text-white mb-0" id="processing-time">-</h4>
+                    <small class="text-muted">Tiempo de proceso</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body">
+                    <i class="fas fa-heart fa-2x text-gradient mb-2"></i>
+                    <h4 class="text-white mb-0" id="favorites-count">{{ favoritos|length if favoritos else 0 }}</h4>
+                    <small class="text-muted">En favoritos</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botón Flotante: Volver Arriba -->
+<button id="back-to-top" class="btn btn-gradient position-fixed" 
+        style="bottom: 20px; left: 20px; z-index: 1000; display: none;"
+        onclick="scrollToTop()">
+    <i class="fas fa-chevron-up"></i>
+</button>
+
+<!-- Modal: Detalles de Película -->
 <div class="modal fade" id="movieDetailsModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content bg-dark">
             <div class="modal-header border-secondary">
-                <h5 class="modal-title text-gradient">Detalles</h5>
+                <h5 class="modal-title text-gradient">Detalles de la Película</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="movie-details-content">
                 <!-- Contenido dinámico -->
             </div>
             <div class="modal-footer border-secondary">
-                <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-gradient" onclick="agregarAFavoritosFromModal()">Agregar a Favoritos</button>
+                <button class="btn btn-gradient" onclick="agregarAFavoritos()">
+                    <i class="fas fa-heart me-2"></i>Agregar a Favoritos
+                </button>
+                <button class="btn btn-outline-light" onclick="buscarSimilares()">
+                    <i class="fas fa-search me-2"></i>Buscar Similares
+                </button>
             </div>
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    window.RESULTADOS_CONFIG = { index_url: "{{ url_for('index') }}" };
+// Variables globales para la página de resultados
+let currentResults = [];
+let filteredResults = [];
+let currentView = 'grid';
+let processingStartTime = performance.now();
+
+// Inicialización de la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Obtener parámetros de la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchType = urlParams.get('type');
+    const searchQuery = urlParams.get('q');
+    
+    if (searchQuery) {
+        performSearch(searchType, searchQuery);
+    } else {
+        showEmptyState();
+    }
+    
+    // Configurar scroll listener para botón "volver arriba"
+    window.addEventListener('scroll', handleScroll);
+});
+
+// Función principal de búsqueda
+async function performSearch(type, query) {
+    showLoadingState();
+    
+    try {
+        let response;
+        
+        switch (type) {
+            case 'similarity':
+                response = await fetch(`/similares/${encodeURIComponent(query)}`);
+                break;
+            case 'favorites':
+                response = await fetch('/recomendaciones/favoritos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ favoritos_tmdb_ids: JSON.parse(query) })
+                });
+                break;
+            case 'logic':
+                response = await fetch('/buscar/logica', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: query
+                });
+                break;
+            default:
+                throw new Error('Tipo de búsqueda no válido');
+        }
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            displayResults(data, type);
+        } else {
+            showErrorState(data.error || 'Error en la búsqueda');
+        }
+        
+    } catch (error) {
+        console.error('Error en búsqueda:', error);
+        showErrorState('Error de conexión');
+    }
+    
+    // Calcular tiempo de procesamiento
+    const processingTime = ((performance.now() - processingStartTime) / 1000).toFixed(2);
+    document.getElementById('processing-time').textContent = processingTime + 's';
+}
+
+// Mostrar resultados
+function displayResults(data, searchType) {
+    currentResults = data.similares || data.recomendaciones || data;
+    filteredResults = [...currentResults];
+    
+    // Mostrar información de búsqueda
+    showSearchInfo(searchType);
+    
+    // Mostrar película base si existe
+    if (data.pelicula_buscada) {
+        showBaseMovie(data.pelicula_buscada);
+    }
+    
+    // Renderizar resultados
+    renderResults();
+    
+    // Actualizar estadísticas
+    updateStats();
+    
+    // Ocultar estado de carga
+    hideLoadingState();
+}
+
+// Mostrar información del algoritmo utilizado
+function showSearchInfo(type) {
+    const section = document.getElementById('search-info-section');
+    const description = document.getElementById('algorithm-description');
+    
+    const algorithms = {
+        'similarity': {
+            name: 'Búsqueda por Similitud',
+            description: 'Encuentra películas parecidas analizando directores, géneros y actores en común.'
+        },
+        'favorites': {
+            name: 'Recomendaciones Personalizadas con IA',
+            description: 'Utiliza inteligencia artificial para sugerir películas basadas en tus gustos y favoritos.'
+        },
+        'logic': {
+            name: 'Búsqueda Avanzada',
+            description: 'Combina múltiples criterios para encontrar exactamente el tipo de película que buscas.'
+        }
+    };
+    
+    const algo = algorithms[type] || algorithms['similarity'];
+    
+    description.innerHTML = `
+        <strong>${algo.name}:</strong> ${algo.description}
+        <br><small class="text-muted mt-1 d-block">
+            <i class="fas fa-clock me-1"></i>Procesado en tiempo real usando algoritmos de matemáticas discretas
+        </small>
+    `;
+    
+    section.style.display = 'block';
+}
+
+// Mostrar película base
+function showBaseMovie(movie) {
+    const section = document.getElementById('base-movie-section');
+    const content = document.getElementById('base-movie-content');
+    
+    content.innerHTML = `
+        <div class="row align-items-center">
+            <div class="col-md-2">
+                <img src="${movie.poster_url}" class="img-fluid rounded shadow" 
+                     alt="${movie.nombre}" style="max-height: 200px;">
+            </div>
+            <div class="col-md-10">
+                <h3 class="text-gradient mb-3">${movie.nombre}</h3>
+                <p class="text-light mb-3">${movie.overview || 'Sin descripción disponible'}</p>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-gradient" 
+                            onclick="agregarAFavoritos('${movie.tmdb_id || ''}', '${movie.nombre}', '${movie.poster_url}')">
+                        <i class="fas fa-heart me-2"></i>Agregar a Favoritos
+                    </button>
+                    <button class="btn btn-gradient" onclick="verDetalles('${movie.tmdb_id || ''}')">
+                        <i class="fas fa-info-circle me-2"></i>Ver Detalles
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    section.style.display = 'block';
+}
+
+// Renderizar resultados según la vista actual
+function renderResults() {
+    const container = document.getElementById('results-container');
+    
+    if (filteredResults.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-filter fa-3x text-muted mb-3"></i>
+                <h4 class="text-gradient">No hay películas que coincidan con los filtros</h4>
+                <p class="text-muted">Ajusta los criterios de filtrado</p>
+                <button class="btn btn-outline-gradient" onclick="limpiarFiltros()">
+                    <i class="fas fa-redo me-2"></i>Limpiar Filtros
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    
+    filteredResults.forEach((movie, index) => {
+        const titulo = movie.nombre || movie.titulo;
+        const poster = movie.poster_url;
+        const similitud = movie.similitud;
+        const tmdbId = movie.tmdb_id || Math.random();
+        
+        if (currentView === 'grid') {
+            html += renderGridCard(movie, index);
+        } else if (currentView === 'list') {
+            html += renderListCard(movie, index);
+        } else {
+            html += renderCompactCard(movie, index);
+        }
+    });
+    
+    container.innerHTML = html;
+    
+    // Aplicar animaciones de entrada
+    container.querySelectorAll('.movie-card').forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('fade-in-up');
+    });
+}
+
+// Renderizar tarjeta en vista de grilla
+function renderGridCard(movie, index) {
+    const titulo = movie.nombre || movie.titulo;
+    const poster = movie.poster_url;
+    const similitud = movie.similitud;
+    const tmdbId = movie.tmdb_id || Math.random();
+    
+    return `
+        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+            <div class="movie-card h-100">
+                <div class="position-relative">
+                    <img src="${poster}" class="movie-poster" alt="${titulo}"
+                         onerror="this.src='https://via.placeholder.com/300x450/6c5ce7/ffffff?text=Sin+Imagen'">
+                    ${similitud ? `
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <span class="similarity-score">
+                                ${similitud.toFixed(2)}
+                            </span>
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="movie-info p-3">
+                    <h6 class="text-white mb-2 fw-bold">${titulo}</h6>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-light btn-sm flex-grow-1" 
+                                onclick="agregarAFavoritos('${tmdbId}', '${titulo}', '${poster}')">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                        <button class="btn btn-gradient btn-sm" 
+                                onclick="verDetalles('${tmdbId}')">
+                            <i class="fas fa-info"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Renderizar tarjeta en vista de lista
+function renderListCard(movie, index) {
+    const titulo = movie.nombre || movie.titulo;
+    const poster = movie.poster_url;
+    const similitud = movie.similitud;
+    const tmdbId = movie.tmdb_id || Math.random();
+    
+    return `
+        <div class="col-12 mb-3">
+            <div class="card bg-dark border-secondary movie-card">
+                <div class="row g-0">
+                    <div class="col-md-2">
+                        <img src="${poster}" class="img-fluid rounded-start" 
+                             style="height: 150px; object-fit: cover;" alt="${titulo}">
+                    </div>
+                    <div class="col-md-10">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h5 class="text-gradient">${titulo}</h5>
+                                    ${similitud ? `
+                                        <span class="similarity-score me-2">
+                                            Similitud: ${similitud.toFixed(2)}
+                                        </span>
+                                    ` : ''}
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-outline-light btn-sm" 
+                                            onclick="agregarAFavoritos('${tmdbId}', '${titulo}', '${poster}')">
+                                        <i class="fas fa-heart me-1"></i>Favorito
+                                    </button>
+                                    <button class="btn btn-gradient btn-sm" 
+                                            onclick="verDetalles('${tmdbId}')">
+                                        <i class="fas fa-info me-1"></i>Detalles
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Renderizar tarjeta en vista compacta
+function renderCompactCard(movie, index) {
+    const titulo = movie.nombre || movie.titulo;
+    const similitud = movie.similitud;
+    const tmdbId = movie.tmdb_id || Math.random();
+    
+    return `
+        <div class="col-md-6 col-lg-4 mb-2">
+            <div class="d-flex align-items-center p-2 bg-dark rounded border movie-card">
+                <div class="flex-grow-1">
+                    <strong class="text-white">${titulo}</strong>
+                    ${similitud ? `<small class="text-muted ms-2">${similitud.toFixed(2)}</small>` : ''}
+                </div>
+                <div class="d-flex gap-1">
+                    <button class="btn btn-outline-light btn-sm" 
+                            onclick="agregarAFavoritos('${tmdbId}', '${titulo}', '')">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Funciones de filtros y ordenamiento
+function aplicarFiltroSimilitud(valor) {
+    document.getElementById('similarity-value').textContent = valor;
+    
+    filteredResults = currentResults.filter(movie => 
+        !movie.similitud || movie.similitud >= parseFloat(valor)
+    );
+    
+    renderResults();
+    updateStats();
+}
+
+function ordenarResultados(criterio) {
+    switch (criterio) {
+        case 'similitud':
+            filteredResults.sort((a, b) => (b.similitud || 0) - (a.similitud || 0));
+            break;
+        case 'titulo':
+            filteredResults.sort((a, b) => 
+                (a.nombre || a.titulo).localeCompare(b.nombre || b.titulo)
+            );
+            break;
+        case 'fecha':
+            // Si hubiera fecha, ordenar por ella
+            break;
+    }
+    
+    renderResults();
+}
+
+function cambiarVisualizacion(vista) {
+    currentView = vista;
+    renderResults();
+}
+
+function limpiarFiltros() {
+    document.getElementById('similarity-filter').value = 0;
+    document.getElementById('similarity-value').textContent = '0';
+    filteredResults = [...currentResults];
+    renderResults();
+    updateStats();
+}
+
+// Funciones de estado
+function showLoadingState() {
+    document.getElementById('loading-state').style.display = 'block';
+    document.getElementById('empty-state').classList.add('d-none');
+}
+
+function hideLoadingState() {
+    document.getElementById('loading-state').style.display = 'none';
+}
+
+function showEmptyState() {
+    hideLoadingState();
+    document.getElementById('empty-state').classList.remove('d-none');
+}
+
+function showErrorState(mensaje) {
+    hideLoadingState();
+    document.getElementById('results-container').innerHTML = `
+        <div class="col-12 text-center py-5">
+            <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+            <h4 class="text-gradient">Error en la búsqueda</h4>
+            <p class="text-muted">${mensaje}</p>
+            <button class="btn btn-gradient" onclick="nuevaBusqueda()">
+                <i class="fas fa-redo me-2"></i>Intentar de nuevo
+            </button>
+        </div>
+    `;
+}
+
+// Actualizar estadísticas
+function updateStats() {
+    document.getElementById('total-results').textContent = filteredResults.length;
+    
+    if (filteredResults.length > 0) {
+        const similarities = filteredResults
+            .filter(movie => movie.similitud)
+            .map(movie => movie.similitud);
+        
+        if (similarities.length > 0) {
+            const avg = similarities.reduce((a, b) => a + b, 0) / similarities.length;
+            document.getElementById('avg-similarity').textContent = avg.toFixed(2);
+        } else {
+            document.getElementById('avg-similarity').textContent = 'N/A';
+        }
+    }
+}
+
+// Funciones de utilidad
+function toggleFilters() {
+    const filters = document.getElementById('quick-filters');
+    const icon = document.querySelector('[onclick="toggleFilters()"] i');
+    
+    if (filters.classList.contains('show')) {
+        filters.classList.remove('show');
+        icon.className = 'fas fa-chevron-down';
+    } else {
+        filters.classList.add('show');
+        icon.className = 'fas fa-chevron-up';
+    }
+}
+
+function handleScroll() {
+    const backToTop = document.getElementById('back-to-top');
+    if (window.pageYOffset > 300) {
+        backToTop.style.display = 'block';
+    } else {
+        backToTop.style.display = 'none';
+    }
+}
+
+function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function nuevaBusqueda() {
+    window.location.href = '{{ url_for("index") }}';
+}
+
+function exportarResultados() {
+    const data = {
+        timestamp: new Date().toISOString(),
+        total_results: filteredResults.length,
+        results: filteredResults
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `cinegraph_resultados_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    
+    URL.revokeObjectURL(url);
+}
+
+// Función placeholder para ver detalles
+function verDetalles(tmdbId) {
+    // Aquí se podría implementar una llamada a la API de TMDb para obtener detalles
+    console.log('Ver detalles de:', tmdbId);
+    // Por ahora, solo mostrar un mensaje
+    if (typeof mostrarNotificacion === 'function') {
+        mostrarNotificacion('📋 Detalles no implementados aún', 'info');
+    }
+}
 </script>
-<script src="{{ url_for('static', filename='js/resultados.js') }}"></script>
 {% endblock %}
