@@ -229,73 +229,9 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
     });
 }
 
-// Función para exportar favoritos (bonus)
-function exportarFavoritos() {
-    if (favoritos.length === 0) {
-        mostrarNotificacion('⚠️ No hay favoritos para exportar', 'warning');
-        return;
-    }
-    
-    const dataStr = JSON.stringify(favoritos, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `cinegraph_favoritos_${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    
-    URL.revokeObjectURL(url);
-    mostrarNotificacion('📥 Favoritos exportados exitosamente', 'success');
-}
-
-// Función para importar favoritos (bonus)
-function importarFavoritos() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    
-    input.onchange = function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const importedFavoritos = JSON.parse(e.target.result);
-                
-                if (Array.isArray(importedFavoritos)) {
-                    // Validar estructura básica
-                    const validFavoritos = importedFavoritos.filter(fav => 
-                        fav.tmdb_id && fav.titulo && fav.poster_url
-                    );
-                    
-                    if (validFavoritos.length > 0) {
-                        favoritos = validFavoritos;
-                        localStorage.setItem('cinegraph_favoritos', JSON.stringify(favoritos));
-                        actualizarContadorFavoritos();
-                        mostrarNotificacion(`📤 ${validFavoritos.length} favoritos importados`, 'success');
-                    } else {
-                        mostrarNotificacion('❌ El archivo no contiene favoritos válidos', 'danger');
-                    }
-                } else {
-                    mostrarNotificacion('❌ Formato de archivo incorrecto', 'danger');
-                }
-            } catch (error) {
-                mostrarNotificacion('❌ Error al leer el archivo', 'danger');
-            }
-        };
-        reader.readAsText(file);
-    };
-    
-    input.click();
-}
-
 // Exponer funciones globales
 window.agregarAFavoritos = agregarAFavoritos;
 window.removerDeFavoritos = removerDeFavoritos;
 window.mostrarFavoritos = mostrarFavoritos;
 window.recomendarPorFavoritos = recomendarPorFavoritos;
 window.limpiarFavoritos = limpiarFavoritos;
-window.exportarFavoritos = exportarFavoritos;
-window.importarFavoritos = importarFavoritos;
