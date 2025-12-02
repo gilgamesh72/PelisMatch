@@ -1,8 +1,3 @@
-// ================================================
-// SISTEMA DE FAVORITOS - CINEGRAPH
-// Por Katherine & Diana
-// ================================================
-
 // Variables globales
 let favoritos = JSON.parse(localStorage.getItem('cinegraph_favoritos') || '[]');
 
@@ -37,8 +32,11 @@ function actualizarContadorFavoritos() {
 
 // Función para agregar película a favoritos
 function agregarAFavoritos(tmdbId, titulo, posterUrl) {
+    // Convertir a número para asegurar formato correcto
+    const numericId = parseInt(tmdbId) ;
+    
     // Verificar si ya está en favoritos
-    const yaExiste = favoritos.find(fav => fav.tmdb_id === tmdbId);
+    const yaExiste = favoritos.find(fav => fav.tmdb_id === numericId);
     
     if (yaExiste) {
         mostrarNotificacion('⚠️ Esta película ya está en tus favoritos', 'warning');
@@ -46,7 +44,7 @@ function agregarAFavoritos(tmdbId, titulo, posterUrl) {
     }
     
     const nuevoFavorito = {
-        tmdb_id: tmdbId,
+        tmdb_id: numericId,
         titulo: titulo,
         poster_url: posterUrl,
         fecha_agregado: new Date().toISOString()
@@ -111,50 +109,60 @@ function mostrarFavoritos() {
     modal.show();
 }
 
-// Función para generar recomendaciones por favoritos (IA)
 async function recomendarPorFavoritos() {
     if (favoritos.length === 0) {
         mostrarNotificacion('⚠️ Necesitas agregar películas a favoritos primero', 'warning');
         return;
     }
-    
-    const tmdbIds = favoritos.map(fav => fav.tmdb_id);
+
+    // IDs numéricos (si existen) y títulos
+    const tmdbIds = favoritos.map(fav => parseInt(fav.tmdb_id)).filter(id => !isNaN(id));
+    const titulos = favoritos.map(fav => fav.titulo).filter(t => t && t.trim().length > 0);
+
+    if (tmdbIds.length === 0 && titulos.length === 0) {
+        mostrarNotificacion('⚠️ No hay datos válidos en favoritos', 'warning');
+        return;
+    }
+
     const btn = document.querySelector('#btn-recomendar-favoritos') || document.querySelector('#btn-ia-main');
-    
+
     if (btn) {
         const originalText = btn.innerHTML;
         btn.innerHTML = '<div class="loading"></div> Procesando IA...';
         btn.disabled = true;
-        
+
         try {
+            console.log('Enviando a IA - IDs:', tmdbIds, 'Títulos:', titulos);
+
+            const requestBody = {};
+            if (tmdbIds.length) requestBody.favoritos_tmdb_ids = tmdbIds;
+            if (titulos.length) requestBody.favoritos_titulos = titulos;
+
+            console.log('Request body:', requestBody);
+
             const response = await fetch('/recomendaciones/favoritos', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    favoritos_tmdb_ids: tmdbIds
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
             });
-            
+
+            console.log('Response status:', response.status);
+
             const data = await response.json();
-            
+            console.log('Response data:', data);
+
             if (response.ok) {
-                // Cerrar modal de favoritos si está abierto
                 const modalFavoritos = bootstrap.Modal.getInstance(document.getElementById('favoritosModal'));
-                if (modalFavoritos) {
-                    modalFavoritos.hide();
-                }
-                
-                // Mostrar resultados
+                if (modalFavoritos) modalFavoritos.hide();
+
                 if (typeof mostrarResultados === 'function') {
-                    mostrarResultados(data, 'inteligencia artificial (basado en favoritos)');
+                    mostrarResultados(data, 'inteligencia artificial (favoritos)');
                 } else {
                     console.log('Recomendaciones IA:', data);
                     mostrarNotificacion('✨ Recomendaciones generadas con IA', 'success');
                 }
             } else {
-                mostrarNotificacion(`❌ Error: ${data.error}`, 'danger');
+                mostrarNotificacion(`❌ Error: ${data.error || 'Error desconocido'}`, 'danger');
             }
         } catch (error) {
             console.error('Error en recomendaciones IA:', error);
@@ -221,73 +229,9 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
     });
 }
 
-// Función para exportar favoritos (bonus)
-function exportarFavoritos() {
-    if (favoritos.length === 0) {
-        mostrarNotificacion('⚠️ No hay favoritos para exportar', 'warning');
-        return;
-    }
-    
-    const dataStr = JSON.stringify(favoritos, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `cinegraph_favoritos_${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    
-    URL.revokeObjectURL(url);
-    mostrarNotificacion('📥 Favoritos exportados exitosamente', 'success');
-}
-
-// Función para importar favoritos (bonus)
-function importarFavoritos() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    
-    input.onchange = function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const importedFavoritos = JSON.parse(e.target.result);
-                
-                if (Array.isArray(importedFavoritos)) {
-                    // Validar estructura básica
-                    const validFavoritos = importedFavoritos.filter(fav => 
-                        fav.tmdb_id && fav.titulo && fav.poster_url
-                    );
-                    
-                    if (validFavoritos.length > 0) {
-                        favoritos = validFavoritos;
-                        localStorage.setItem('cinegraph_favoritos', JSON.stringify(favoritos));
-                        actualizarContadorFavoritos();
-                        mostrarNotificacion(`📤 ${validFavoritos.length} favoritos importados`, 'success');
-                    } else {
-                        mostrarNotificacion('❌ El archivo no contiene favoritos válidos', 'danger');
-                    }
-                } else {
-                    mostrarNotificacion('❌ Formato de archivo incorrecto', 'danger');
-                }
-            } catch (error) {
-                mostrarNotificacion('❌ Error al leer el archivo', 'danger');
-            }
-        };
-        reader.readAsText(file);
-    };
-    
-    input.click();
-}
-
 // Exponer funciones globales
 window.agregarAFavoritos = agregarAFavoritos;
 window.removerDeFavoritos = removerDeFavoritos;
 window.mostrarFavoritos = mostrarFavoritos;
 window.recomendarPorFavoritos = recomendarPorFavoritos;
 window.limpiarFavoritos = limpiarFavoritos;
-window.exportarFavoritos = exportarFavoritos;
-window.importarFavoritos = importarFavoritos;

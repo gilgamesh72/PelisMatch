@@ -1,8 +1,3 @@
-// ================================================
-// CHATBOT CON FSM - PELISMATCH
-// Por Katherine & Diana
-// ================================================
-
 class ChatbotFSM {
     constructor() {
         this.isOpen = false;
@@ -221,16 +216,8 @@ class ChatbotFSM {
                 </h6>
                 <div class="mb-2">
                     ${recomendaciones.map(pelicula => 
-                        `<span class="badge bg-gradient me-1 mb-1">${pelicula}</span>`
+                        `<span class="badge bg-gradient me-1 mb-1 clickable-badge" onclick="chatbot.cerrarYBuscar('${pelicula}')" style="cursor: pointer;" title="Clic para buscar">${pelicula}</span>`
                     ).join('')}
-                </div>
-                <small class="text-muted">
-                    <strong>Criterios:</strong> ${JSON.stringify(criterios, null, 2)}
-                </small>
-                <div class="mt-2">
-                    <button class="btn btn-outline-light btn-sm" onclick="chatbot.cerrarYBuscar('${recomendaciones[0]}')">
-                        <i class="fas fa-search me-1"></i>Buscar "${recomendaciones[0]}"
-                    </button>
                 </div>
             </div>
         `;
