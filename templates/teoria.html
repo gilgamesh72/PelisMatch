@@ -96,14 +96,26 @@
                             </div>
                         </div>
 
-                        <h5>Algoritmo de Recomendación</h5>
+                        <h5>¿Cómo funciona el algoritmo de recomendación?</h5>
                         <div class="bg-secondary p-3 rounded">
-                            <pre class="text-white mb-0"><code>function recomendar(película_objetivo):
-    vecinos = obtener_vecinos_directos(película_objetivo)
-    for each vecino in vecinos:
-        peso = calcular_similitud_ponderada(película_objetivo, vecino)
-        agregar_a_resultados(vecino, peso)
-    return ordenar_por_peso_descendente(resultados)</code></pre>
+                            <p class="text-white mb-2"><strong>Proceso paso a paso:</strong></p>
+                            <ol class="text-white small">
+                                <li><strong>Selección de película base:</strong> Cuando seleccionas una película, el sistema la identifica como nodo objetivo en el grafo.</li>
+                                <li><strong>Búsqueda de vecinos:</strong> El algoritmo examina TODAS las películas de la base de datos y calcula la similitud con la película objetivo.</li>
+                                <li><strong>Cálculo de peso:</strong> Para cada película candidata, se calcula:
+                                    <ul>
+                                        <li>+3.0 puntos si comparten el mismo director</li>
+                                        <li>+2.0 puntos por cada género en común</li>
+                                        <li>+1.5 puntos por cada actor en común</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Filtrado:</strong> Solo se consideran películas con peso > 0 (que comparten al menos un elemento).</li>
+                                <li><strong>Ordenamiento:</strong> Las películas se ordenan de mayor a menor peso de similitud.</li>
+                                <li><strong>Resultado:</strong> Se devuelven las top 10 películas más similares para mostrar al usuario.</li>
+                            </ol>
+                            <div class="alert alert-success small mt-2 mb-0">
+                                <strong>Ejemplo real:</strong> Si seleccionas "The Matrix", el sistema encontrará películas que compartan director (Hermanas Wachowski), géneros (Sci-Fi, Acción) y actores (Keanu Reeves, Laurence Fishburne).
+                            </div>
                         </div>
                     </div>
                     
@@ -193,20 +205,37 @@
                             </table>
                         </div>
 
-                        <h5>Algoritmo de Filtrado</h5>
+                        <h5>¿Cómo funciona el sistema de filtrado?</h5>
                         <div class="bg-secondary p-3 rounded">
-                            <pre class="text-white mb-0"><code>function filtrar_logica(criterios_incluir, criterios_excluir):
-    // Paso 1: Obtener conjuntos base
-    C_incluir = ∅
-    for each criterio in criterios_incluir:
-        C_incluir = C_incluir ∪ buscar_por_criterio(criterio)
-    
-    C_excluir = ∅  
-    for each criterio in criterios_excluir:
-        C_excluir = C_excluir ∪ buscar_por_criterio(criterio)
-    
-    F = C_incluir - C_excluir  // Diferencia de conjuntos
-    return F</code></pre>
+                            <p class="text-white mb-2"><strong>Proceso de filtrado paso a paso:</strong></p>
+                            <ol class="text-white small">
+                                <li><strong>Fase 1 - Construcción de criterios a incluir:</strong>
+                                    <ul>
+                                        <li>El sistema crea un conjunto vacío inicial</li>
+                                        <li>Por cada criterio que seleccionaste (géneros, actores, directores), busca todas las películas que lo cumplan</li>
+                                        <li>Todas estas películas se UNEN (operación OR) formando un gran conjunto de candidatas</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Fase 2 - Construcción de criterios a excluir:</strong>
+                                    <ul>
+                                        <li>De manera similar, crea otro conjunto con todos los criterios que NO quieres</li>
+                                        <li>Busca películas que contengan esos elementos no deseados</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Fase 3 - Aplicación de lógica:</strong>
+                                    <ul>
+                                        <li>Del conjunto de películas candidatas (incluir), se ELIMINAN todas las que aparezcan en el conjunto de exclusión</li>
+                                        <li>Esta operación de diferencia de conjuntos garantiza que ninguna película excluida aparezca en resultados</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Resultado final:</strong> Lista filtrada que cumple todas las condiciones lógicas especificadas.</li>
+                            </ol>
+                            <div class="alert alert-success small mt-2 mb-0">
+                                <strong>Ejemplo práctico:</strong> Si buscas "Acción con Tom Cruise pero sin Terror":<br>
+                                1️⃣ Se buscan películas de Acción → 500 películas<br>
+                                2️⃣ Se filtran las que tienen a Tom Cruise → 150 películas<br>
+                                3️⃣ Se eliminan las de Terror → 145 películas finales
+                            </div>
                         </div>
                     </div>
                     
@@ -303,27 +332,43 @@
                             </table>
                         </div>
 
-                        <h5>Función de Transición</h5>
+                        <h5>¿Cómo funciona la transición de estados?</h5>
                         <div class="bg-secondary p-3 rounded">
-                            <pre class="text-white mb-0"><code>δ(estado_actual, input_usuario):
-    match estado_actual:
-        case 'S0_INICIO':
-            return 'S1_GENERO'
-        case 'S1_GENERO':
-            if validar_genero(input_usuario):
-                guardar_genero(input_usuario)
-                return 'S2_DECADA'
-            else:
-                return 'S1_GENERO'  // Permanecer en el mismo estado
-        case 'S2_DECADA':
-            if validar_epoca(input_usuario):
-                guardar_epoca(input_usuario)
-                return 'S3_PERSONA'
-            else:
-                return 'S2_DECADA'
-        case 'S3_PERSONA':
-            procesar_persona(input_usuario)
-            return 'FINAL'</code></pre>
+                            <p class="text-white mb-2"><strong>Flujo de conversación del chatbot:</strong></p>
+                            <ol class="text-white small">
+                                <li><strong>Estado INICIO:</strong>
+                                    <ul>
+                                        <li>El chatbot te saluda y pregunta qué género prefieres</li>
+                                        <li>Automáticamente avanza al siguiente estado sin validación</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Estado GÉNERO:</strong>
+                                    <ul>
+                                        <li>Recibe tu respuesta y usa fuzzy matching para encontrar el género más cercano</li>
+                                        <li>Si encuentra coincidencia ≥70%: guarda el género y avanza a ÉPOCA</li>
+                                        <li>Si NO reconoce el género: muestra opciones válidas y permanece en este estado</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Estado ÉPOCA:</strong>
+                                    <ul>
+                                        <li>Te pregunta si prefieres películas clásicas (antes 2000) o recientes (después 2000)</li>
+                                        <li>Detecta palabras clave: "clásico", "viejo", "antiguo" → antes 2000</li>
+                                        <li>Detecta: "reciente", "nuevo", "moderno" → después 2000</li>
+                                        <li>Una vez validado, guarda la preferencia y avanza a PERSONA</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Estado PERSONA:</strong>
+                                    <ul>
+                                        <li>Te pregunta si hay algún actor o director específico</li>
+                                        <li>Busca el nombre en la base de datos usando fuzzy matching</li>
+                                        <li>Si escribes "ninguno" o "no", omite este filtro</li>
+                                        <li>Finalmente genera recomendaciones con todos los criterios y termina</li>
+                                    </ul>
+                                </li>
+                            </ol>
+                            <div class="alert alert-success small mt-2 mb-0">
+                                <strong>Característica especial:</strong> En cualquier momento puedes escribir "reiniciar" o "empezar de nuevo" para volver al estado inicial sin perder la sesión.
+                            </div>
                         </div>
                     </div>
                     
@@ -436,23 +481,48 @@
                             </table>
                         </div>
 
-                        <h5>Algoritmo de Recomendación</h5>
+                        <h5>¿Cómo funciona la recomendación con IA?</h5>
                         <div class="bg-secondary p-3 rounded">
-                            <pre class="text-white mb-0"><code>function recomendar_con_ia(favoritos_usuario):
-    // Paso 1: Obtener embeddings de favoritos
-    embeddings_favoritos = []
-    for pelicula in favoritos_usuario:
-        embedding = model.get_movie_embedding(pelicula.id)
-        embeddings_favoritos.append(embedding)
-    
-    // Paso 2: Crear perfil de usuario (promedio)
-    perfil_usuario = mean(embeddings_favoritos)
-    
-    // Paso 3: Calcular similitud coseno
-    similitudes = cosine_similarity(perfil_usuario, todos_embeddings)
-    
-    // Paso 4: Devolver top N excluyendo favoritos
-    return top_n_excluding_favorites(similitudes, favoritos_usuario)</code></pre>
+                            <p class="text-white mb-2"><strong>Proceso de recomendación neuronal paso a paso:</strong></p>
+                            <ol class="text-white small">
+                                <li><strong>Recolección de favoritos:</strong>
+                                    <ul>
+                                        <li>El sistema recupera todas las películas que marcaste como favoritas desde localStorage</li>
+                                        <li>Cada película tiene un ID único que se usa para buscar su embedding</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Obtención de embeddings:</strong>
+                                    <ul>
+                                        <li>Para cada película favorita, el sistema recupera su vector de 50 dimensiones</li>
+                                        <li>Estos vectores fueron aprendidos durante el entrenamiento de la red neuronal</li>
+                                        <li>Cada dimensión representa una característica latente (no visible) de la película</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Creación de perfil de usuario:</strong>
+                                    <ul>
+                                        <li>Se calcula el PROMEDIO de todos los embeddings de tus favoritos</li>
+                                        <li>Este vector promedio representa tu "gusto cinematográfico" en 50 dimensiones</li>
+                                        <li>Es como crear un punto en el espacio que está en el "centro" de tus preferencias</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Cálculo de similitud:</strong>
+                                    <ul>
+                                        <li>Se usa la fórmula de similitud del coseno entre tu perfil y TODAS las películas</li>
+                                        <li>Similitud = cos(θ) = (A·B) / (||A|| × ||B||) donde θ es el ángulo entre vectores</li>
+                                        <li>Resultado: valores entre -1 y 1, donde 1 = máxima similitud</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Filtrado y ordenamiento:</strong>
+                                    <ul>
+                                        <li>Se ordenan las películas por similitud de mayor a menor</li>
+                                        <li>Se excluyen las que ya están en favoritos</li>
+                                        <li>Se devuelven las top 10 recomendaciones</li>
+                                    </ul>
+                                </li>
+                            </ol>
+                            <div class="alert alert-success small mt-2 mb-0">
+                                <strong>Ventaja clave:</strong> A diferencia del sistema basado en grafos, la IA encuentra patrones ocultos. Por ejemplo, puede recomendar películas que comparten "atmósfera" o "tono narrativo" sin necesidad de compartir actores o géneros explícitos.
+                            </div>
                         </div>
                     </div>
                     
@@ -471,10 +541,10 @@
                         <div class="bg-dark p-3 rounded mb-3">
                             <h6 class="text-gradient">🎯 Ventajas del Enfoque</h6>
                             <ul class="small">
-                                <li>✅ <strong>Escalable:</strong> O(k) donde k = dimensión embedding</li>
-                                <li>✅ <strong>Personalizado:</strong> Perfil único por usuario</li>
-                                <li>✅ <strong>Aprende patrones:</strong> Relaciones no lineales</li>
-                                <li>✅ <strong>Cold start:</strong> Funciona con pocos favoritos</li>
+                                <li><strong>Escalable:</strong> O(k) donde k = dimensión embedding</li>
+                                <li><strong>Personalizado:</strong> Perfil único por usuario</li>
+                                <li><strong>Aprende patrones:</strong> Relaciones no lineales</li>
+                                <li><strong>Cold start:</strong> Funciona con pocos favoritos</li>
                             </ul>
                         </div>
                         
